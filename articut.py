@@ -30,9 +30,8 @@ def Tokenization(Dataframe):
                 contentword+="/"
         contentword=contentword[:-1]
         titles.append(contentword)
-    print(titles)
     Dataframe["title"]=titles
-    """
+    
     paragraphs=[]
     for sentence in Dataframe["paragraph"]:
         result=articut.parse(sentence)
@@ -44,8 +43,8 @@ def Tokenization(Dataframe):
                 contentword+="/"
         contentword=contentword[:-1]
         paragraphs.append(contentword)
-    Dataframe.loc[:,["paragraph"]]=paragraphs
-    """
+    Dataframe["paragraph"]=paragraphs
+    
     return Dataframe
 
 outputdataframe=Tokenization(inputdataframe)
