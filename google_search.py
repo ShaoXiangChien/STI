@@ -31,15 +31,13 @@ def get_results(query):
     response = get_source(
         "https://www.google.com/search?q=" + query + '&filter=0')
     responses = [response]
-
-
-0):
-        url=response.html.xpath(f"//a[@aria-label='Page {i}']/@href")
+    for i in range(2, 200):
+        url = response.html.xpath(f"//a[@aria-label='Page {i}']/@href")
         if len(url):
-            new_res=get_source("https://www.google.com" + url[0])
+            new_res = get_source("https://www.google.com" + url[0])
             responses.append(new_res)
             if i == 10 or ((i - 10) % 4 == 0 and i > 10):
-                response=new_res
+                response = new_res
         else:
             break
 
@@ -48,30 +46,30 @@ def get_results(query):
 
 def parse_results(response):
 
-    css_identifier_result=".tF2Cxc"
-    css_identifier_title="h3"
-    css_identifier_link=".yuRUbf a"
-    css_identifier_text=".VwiC3b"
+    css_identifier_result = ".tF2Cxc"
+    css_identifier_title = "h3"
+    css_identifier_link = ".yuRUbf a"
+    css_identifier_text = ".VwiC3b"
 
-    results=response.html.find(css_identifier_result)
+    results = response.html.find(css_identifier_result)
 
-    output=[]
+    output = []
 
     for result in results:
         try:
-            title=result.find(css_identifier_title, first = True).text
+            title = result.find(css_identifier_title, first=True).text
         except:
-            title=''
+            title = ''
         try:
-            link=result.find(css_identifier_link, first = True).attrs['href']
+            link = result.find(css_identifier_link, first=True).attrs['href']
         except:
-            link=''
+            link = ''
         try:
-            text=result.find(css_identifier_text, first = True).text
+            text = result.find(css_identifier_text, first=True).text
         except:
-            text=''
+            text = ''
 
-        item={
+        item = {
             'title': title,
             'link': link,
             'text': text

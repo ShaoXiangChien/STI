@@ -2,7 +2,8 @@ import pandas as pd
 import requests
 from pprint import pprint
 import time
-import.google_search
+import google_search
+import json
 
 
 def parse_content(source, piece):
@@ -36,6 +37,8 @@ def parse_content(source, piece):
 
 def collect_data(query):
     results = google_search.google_search(query)
+    # with open('./result.json', 'w', encoding='utf8') as fh:
+    #     json.dump(results, fh)
     target_sources = ['udn.com', 'chinatimes.com',
                       'news.tvbs.com', 'setn.com', 'ltn.com', 'appledaily.com']
     desired_news = {ta: [] for ta in target_sources}
