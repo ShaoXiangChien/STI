@@ -30,9 +30,8 @@ def Tokenization(Dataframe):
                 contentword+="/"
         contentword=contentword[:-1]
         titles.append(contentword)
-    print(titles)
     Dataframe["title"]=titles
-    """
+    
     paragraphs=[]
     for sentence in Dataframe["paragraph"]:
         result=articut.parse(sentence)
@@ -44,9 +43,10 @@ def Tokenization(Dataframe):
                 contentword+="/"
         contentword=contentword[:-1]
         paragraphs.append(contentword)
-    Dataframe.loc[:,["paragraph"]]=paragraphs
-    """
+    Dataframe["paragraph"]=paragraphs
+    
     return Dataframe
 
+# test
 outputdataframe=Tokenization(inputdataframe)
 outputdataframe.to_csv("Covid_Tokenized.csv",encoding='utf_8_sig')

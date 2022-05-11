@@ -2,7 +2,8 @@ import pandas as pd
 import requests
 from pprint import pprint
 import time
-import.google_search
+import google_search
+import json
 
 
 def parse_content(source, piece):
@@ -24,6 +25,10 @@ def parse_content(source, piece):
         date = response.html.xpath("//span[@class='time']/text()")
         article_contents = response.html.xpath(
             "//div[@class='text boxTitle boxText']/p[not(@*)]/text()")
+    elif source=='news.yahoo.com':
+        date=response.html.xpath("//div[@class="caas-attr-time-style"]/time/text()")
+        article_contents=response.html.xpath("//div[@class="caas-body"]/p/text()")
+    
     elif source == 'appledaily.com':
         date = response.html.xpath("//div[@class='timestamp']/text()[2]")[0]
         article_contents = response.html.xpath("//section/p/text()")
@@ -36,6 +41,8 @@ def parse_content(source, piece):
 
 def collect_data(query):
     results = google_search.google_search(query)
+    # with open('./result.json', 'w', encoding='utf8') as fh:
+    #     json.dump(results, fh)
     target_sources = ['udn.com', 'chinatimes.com',
                       'news.tvbs.com', 'setn.com', 'ltn.com', 'appledaily.com']
     desired_news = {ta: [] for ta in target_sources}
