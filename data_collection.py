@@ -27,14 +27,20 @@ def parse_content(source, piece):
         date = response.html.xpath("//span[@class='time']/text()")
         article_contents = response.html.xpath(
             "//div[@class='text boxTitle boxText']/p[not(@*)]/text()")
-    elif source=='news.yahoo.com':
-        date=response.html.xpath("//div[@class='caas-attr-time-style']/time/text()")[0]
-        article_contents=response.html.xpath("//div[@class='caas-body']/p/text()")
+        
+    elif source == 'storm.mg':
+        date = response.html.xpath("//span[@class='info_inner_content']/text()")
+        article_contents = response.html.xpath("//div[@class='article_content_inner']/p/text()")
+        
+    elif source == 'cna.com.tw':
+        date = response.html.xpath("//div[@class='updatetime']/span/text()")
+        article_contents = response.html.xpath("//div[@class='paragraph']/p/text()")
     elif source == 'news.yahoo.com':
         date = response.html.xpath(
             "//div[@class='caas-attr-time-style']/time/text()")
         article_contents = response.html.xpath(
             "//div[@class='caas-body']/p/text()")
+
 
     return {'title': piece['title'], 'date': date, 'paragraph': ' '.join(article_contents), 'source': source}
 
@@ -46,7 +52,7 @@ def collect_data(query):
     # with open('./result.json', 'w', encoding='utf8') as fh:
     #     json.dump(results, fh)
     target_sources = ['udn.com', 'chinatimes.com',
-                      'news.tvbs.com', 'setn.com', 'ltn.com', 'appledaily.com', 'news.yahoo.com']
+                      'news.tvbs.com', 'setn.com', 'ltn.com', 'appledaily.com', 'news.yahoo.com', 'storm.mg', 'cna.com.tw']
     desired_news = {ta: [] for ta in target_sources}
     for res in results:
         for ta in target_sources:
