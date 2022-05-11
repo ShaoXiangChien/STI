@@ -31,7 +31,7 @@ def get_results(query):
     response = get_source(
         "https://www.google.com/search?q=" + query + '&filter=0')
     responses = [response]
-    for i in range(2, 200):
+    for i in range(2, 100):
         url = response.html.xpath(f"//a[@aria-label='Page {i}']/@href")
         if len(url):
             new_res = get_source("https://www.google.com" + url[0])

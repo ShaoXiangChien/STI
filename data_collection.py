@@ -12,7 +12,9 @@ def parse_content(source, piece):
     date = ''
     article_contents = ''
     if source == 'udn.com':
-        pass
+        date = response.html.xpath("//div/section/time/text()")
+        article_contents = response.html.xpath(
+            "//section[@class='article-content__editor']/p/text()")
     elif source == 'chinatimes.com':
         pass
     elif source == 'news.tvbs.com':
@@ -28,10 +30,11 @@ def parse_content(source, piece):
     elif source=='news.yahoo.com':
         date=response.html.xpath("//div[@class='caas-attr-time-style']/time/text()")[0]
         article_contents=response.html.xpath("//div[@class='caas-body']/p/text()")
-    
-    elif source == 'appledaily.com':
-        date = response.html.xpath("//div[@class='timestamp']/text()[2]")[0]
-        article_contents = response.html.xpath("//section/p/text()")
+    elif source == 'news.yahoo.com':
+        date = response.html.xpath(
+            "//div[@class='caas-attr-time-style']/time/text()")
+        article_contents = response.html.xpath(
+            "//div[@class='caas-body']/p/text()")
 
     return {'title': piece['title'], 'date': date, 'paragraph': ' '.join(article_contents), 'source': source}
 
