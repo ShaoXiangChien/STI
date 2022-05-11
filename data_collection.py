@@ -25,6 +25,10 @@ def parse_content(source, piece):
         date = response.html.xpath("//span[@class='time']/text()")
         article_contents = response.html.xpath(
             "//div[@class='text boxTitle boxText']/p[not(@*)]/text()")
+    elif source=='news.yahoo.com':
+        date=response.html.xpath("//div[@class="caas-attr-time-style"]/time/text()")
+        article_contents=response.html.xpath("//div[@class="caas-body"]/p/text()")
+    
     elif source == 'appledaily.com':
         date = response.html.xpath("//div[@class='timestamp']/text()[2]")[0]
         article_contents = response.html.xpath("//section/p/text()")
