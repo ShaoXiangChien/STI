@@ -4,6 +4,7 @@ from pprint import pprint
 import time
 import google_search
 import json
+import summarization
 
 
 def parse_content(source, piece):
@@ -23,6 +24,12 @@ def parse_content(source, piece):
             "//div[@class='article_content']/text()")
     elif source == 'setn.com':
         pass
+
+    elif source == 'storm.mg':
+        date = response.html.xpath(
+            "//span[@class='info_inner_content']/text()")
+        article_contents = response.html.xpath(
+            "//div[@class='article_content_inner']/p/text()")
     elif source == 'ltn.com':
         date = response.html.xpath("//span[@class='time']/text()")
         article_contents = response.html.xpath(
@@ -58,6 +65,7 @@ def collect_data(query):
 
 
 if __name__ == '__main__':
+    print('data collection begins...')
     tic = time.perf_counter()
     news, num = collect_data('萊豬')
     toc = time.perf_counter()
@@ -69,5 +77,12 @@ if __name__ == '__main__':
         for piece in v:
             news_df = news_df.append(parse_content(
                 k, piece), ignore_index=True)
-    print(news_df)
+    # print(news_df)
     news_df.to_csv('output.csv', index=False, encoding="utf-8-sig")
+    sentences = []
+    for paragraph in news_df[news_df.paragraph.notnull()].paragraph.apply(lambda x: x.replace('\r', '').replace('\n', '').split("。")):
+        sentences += paragraph
+    summary = summarization.summarize(sentences)
+    print(summary)
+    with open("./news_summary.txt", 'w') as fh:
+        fh.write(summary)
