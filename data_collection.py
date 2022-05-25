@@ -29,7 +29,7 @@ def parse_content(source, piece):
             "//div[@class='text boxTitle boxText']/p[not(@*)]/text()")
     elif source == 'news.yahoo.com':
         date = response.html.xpath(
-            "//div[@class='caas-attr-time-style']/time/text()")
+            "//div[@class='caas-attr-time-style']/time/text()")[0]
         article_contents = response.html.xpath(
             "//div[@class='caas-body']/p/text()")
 
@@ -47,7 +47,7 @@ def collect_data(query):
     # with open('./result.json', 'w', encoding='utf8') as fh:
     #     json.dump(results, fh)
     target_sources = ['udn.com', 'chinatimes.com',
-                      'news.tvbs.com', 'setn.com', 'ltn.com', 'appledaily.com']
+                      'news.tvbs.com', 'setn.com', 'ltn.com', 'appledaily.com', 'news.yahoo.com']
     desired_news = {ta: [] for ta in target_sources}
     for res in results:
         for ta in target_sources:
@@ -70,4 +70,4 @@ if __name__ == '__main__':
             news_df = news_df.append(parse_content(
                 k, piece), ignore_index=True)
     print(news_df)
-    news_df.to_csv('output.csv', index=False)
+    news_df.to_csv('output.csv', index=False, encoding="utf-8-sig")
