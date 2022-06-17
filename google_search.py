@@ -4,6 +4,8 @@ import pandas as pd
 from lxml import etree
 from requests_html import HTML
 from requests_html import HTMLSession
+from stqdm import stqdm
+import streamlit as st
 
 
 def get_source(url):
@@ -25,13 +27,14 @@ def get_source(url):
         print(e)
 
 
-def get_results(query):
+def get_results(query, n):
 
     query = urllib.parse.quote_plus(query)
     response = get_source(
         "https://www.google.com/search?q=" + query + '&filter=0')
     responses = [response]
-    for i in range(2, 100):
+
+    for i in stqdm(range(2, n+2)):
         url = response.html.xpath(f"//a[@aria-label='Page {i}']/@href")
         if len(url):
             new_res = get_source("https://www.google.com" + url[0])
@@ -80,8 +83,8 @@ def parse_results(response):
     return output
 
 
-def google_search(query):
-    responses = get_results(query)
+def google_search(query, n):
+    responses = get_results(query, n)
     results = []
     for response in responses:
         results += parse_results(response)
