@@ -1,6 +1,5 @@
 import tensorflow_hub as hub
 import numpy as np
-import tensorflow_text
 from sklearn.metrics.pairwise import cosine_similarity
 import networkx as nx
 

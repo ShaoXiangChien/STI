@@ -50,6 +50,9 @@ if __name__ == '__main__':
         st.write('資料蒐集進行中...')
         tic = time.perf_counter()
         news, num = collect_data(event, n)
+        with open('./raw_news_{}.json'.format(event), 'w', encoding='utf-8') as fh:
+            json.dump(news, fh, ensure_ascii=False)
+
         toc = time.perf_counter()
         st.success(
             f"在{toc - tic:0.4f}秒後搜集了{num}筆可用的資料")
@@ -59,9 +62,12 @@ if __name__ == '__main__':
             for k, v in news.items():
                 source_dt[k] = len(v)
                 for piece in v:
-                    row = pd.DataFrame(parse_content(
-                        k, piece), index=[0])
-                    news_df = pd.concat([news_df, row], ignore_index=True)
+                    try:
+                        row = pd.DataFrame(parse_content(
+                            k, piece), index=[0])
+                        news_df = pd.concat([news_df, row], ignore_index=True)
+                    except:
+                        continue
             st.subheader("資料來源")
             st.write(source_dt)
             news_df.to_csv('output.csv', index=False, encoding="utf-8-sig")
