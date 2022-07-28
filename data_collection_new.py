@@ -205,7 +205,10 @@ def parse_content(source, piece):
 
     return {'title': piece['title'], 'date': date_str.format('YYYY/MM/DD HH:mm'), 'paragraph': ''.join(article_contents), 'source': source}
 
-
+# 這個Fuction指定target_sources、要爬的事件、筆數(會與結果不同，因為會用target_sources篩選)之後可以直接生成df
+# 可用的target_sources:
+# target_sources = ['udn.com', 'chinatimes.com',
+#                        'news.tvbs.com', 'setn.com', 'ltn.com', 'appledaily.com', 'news.yahoo.com', 'storm.mg', 'cna.com.tw']
 def news_to_df(target_sources, event, n):
     result_df = google_search_api(event, n)
     news, num = collect_target_news(target_sources, result_df)
