@@ -50,6 +50,9 @@ if __name__ == '__main__':
         st.write('資料蒐集進行中...')
         tic = time.perf_counter()
         news, num = collect_data(event, n)
+        with open('./raw_news_{}.json'.format(event), 'w', encoding='utf-8') as fh:
+            json.dump(news, fh, ensure_ascii=False)
+
         toc = time.perf_counter()
         st.success(
             f"在{toc - tic:0.4f}秒後搜集了{num}筆可用的資料")
@@ -59,9 +62,12 @@ if __name__ == '__main__':
             for k, v in news.items():
                 source_dt[k] = len(v)
                 for piece in v:
-                    row = pd.DataFrame(parse_content(
-                        k, piece), index=[0])
-                    news_df = pd.concat([news_df, row], ignore_index=True)
+                    try:
+                        row = pd.DataFrame(parse_content(
+                            k, piece), index=[0])
+                        news_df = pd.concat([news_df, row], ignore_index=True)
+                    except:
+                        continue
             st.subheader("資料來源")
             st.write(source_dt)
             news_df.to_csv('output.csv', index=False, encoding="utf-8-sig")
@@ -82,61 +88,61 @@ if __name__ == '__main__':
     #     st.success("斷詞完成")
     #     start_kw_extract = True
 
-    st.header("關鍵字萃取")
-    if start_kw_extract:
-        selected_keywords = []
-        kw_tags = ['nouny', 'KNOWLEDGE', 'person']
-        full_text = ' '.join(news_df.paragraph.fillna(
-            "").to_list() + news_df.title.fillna("").to_list())
-        keywords = keyword_extract(full_text)
-        for kw in keywords:
-            found = False
-            for tag in kw_tags:
-                if tag in kw:
-                    found = True
-                    break
-            if found:
-                selected_keywords.append(kw[kw.find('>')+1:])
+    # st.header("關鍵字萃取")
+    # if start_kw_extract:
+    #     selected_keywords = []
+    #     kw_tags = ['nouny', 'KNOWLEDGE', 'person']
+    #     full_text = ' '.join(news_df.paragraph.fillna(
+    #         "").to_list() + news_df.title.fillna("").to_list())
+    #     keywords = keyword_extract(full_text)
+    #     for kw in keywords:
+    #         found = False
+    #         for tag in kw_tags:
+    #             if tag in kw:
+    #                 found = True
+    #                 break
+    #         if found:
+    #             selected_keywords.append(kw[kw.find('>')+1:])
 
-        st.write(selected_keywords)
-        with open("./textrank_keywords.txt", 'w') as fh:
-            fh.writelines((kw + '\n' for kw in keywords))
+    #     st.write(selected_keywords)
+    #     with open("./textrank_keywords.txt", 'w') as fh:
+    #         fh.writelines((kw + '\n' for kw in keywords))
 
-        with open("./selected_keywords.txt", 'w') as fh:
-            fh.writelines((kw + '\n' for kw in selected_keywords))
-        start_bg_search = True
+    #     with open("./selected_keywords.txt", 'w') as fh:
+    #         fh.writelines((kw + '\n' for kw in selected_keywords))
+    #     start_bg_search = True
 
     # with open("./keywords.txt") as fh:
     #     keywords = [line.strip() for line in fh.readlines()]
     # with open("./selected_keywords.txt") as fh:
     #     selected_keywords = [line.strip() for line in fh.readlines()]
 
-    st.header("背景資料")
-    if start_bg_search:
-        # with open("./background_original_text.json", encoding='utf-8') as fh:
-        #     original_text = json.load(fh)
-        original_text = {}
-        background_dt = {}
-        for kw in selected_keywords[:5]:
-            content = crawl_wiki(kw)
-            original_text[kw] = content
-        with open("background_original_text.json", 'w', encoding='utf-8') as fh:
-            json.dump(original_text, fh, ensure_ascii=False)
-        for k, v in original_text.items():
-            sentences = cut_sentences(v)
-            try:
-                summary = textrank_summarize(sentences, 300)
-            except:
-                summary = v
-            background_dt[k] = summary
+    # st.header("背景資料")
+    # if start_bg_search:
+    #     # with open("./background_original_text.json", encoding='utf-8') as fh:
+    #     #     original_text = json.load(fh)
+    #     original_text = {}
+    #     background_dt = {}
+    #     for kw in selected_keywords[:5]:
+    #         content = crawl_wiki(kw)
+    #         original_text[kw] = content
+    #     with open("background_original_text.json", 'w', encoding='utf-8') as fh:
+    #         json.dump(original_text, fh, ensure_ascii=False)
+    #     for k, v in original_text.items():
+    #         sentences = cut_sentences(v)
+    #         try:
+    #             summary = textrank_summarize(sentences, 300)
+    #         except:
+    #             summary = v
+    #         background_dt[k] = summary
 
-        with open("background.json", 'w', encoding='utf-8') as fh:
-            json.dump(background_dt, fh, ensure_ascii=False)
-        # with open("./background.json", encoding='utf-8') as fh:
-        #     background_dt = json.load(fh)
-        for k, v in background_dt.items():
-            st.subheader(k)
-            st.write(v)
+    #     with open("background.json", 'w', encoding='utf-8') as fh:
+    #         json.dump(background_dt, fh, ensure_ascii=False)
+    #     # with open("./background.json", encoding='utf-8') as fh:
+    #     #     background_dt = json.load(fh)
+    #     for k, v in background_dt.items():
+    #         st.subheader(k)
+    #         st.write(v)
 
     # st.header("文本摘要")
     # if start_summary:

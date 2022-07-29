@@ -25,31 +25,31 @@ def parse_content(source, piece):
         elif source == 'setn.com':
             pass
 
-    elif source == 'storm.mg':
-        date = response.html.xpath(
-            "//span[@class='info_inner_content']/text()")
-        article_contents = response.html.xpath(
-            "//div[@class='article_content_inner']/p/text()")
-    elif source == 'ltn.com':
-        date = response.html.xpath("//span[@class='time']/text()")
-        article_contents = response.html.xpath(
-            "//div[@class='text boxTitle boxText']/p[not(@*)]/text()")
-        
-    elif source == 'cna.com.tw':
-        date = response.html.xpath("//div[@class='updatetime']/span/text()")
-        article_contents = response.html.xpath("//div[@class='paragraph']/p/text()")
+        elif source == 'storm.mg':
+            date = response.html.xpath(
+                "//span[@class='info_inner_content']/text()")
+            article_contents = response.html.xpath(
+                "//div[@class='article_content_inner']/p/text()")
+        elif source == 'ltn.com':
+            date = response.html.xpath("//span[@class='time']/text()")
+            article_contents = response.html.xpath(
+                "//div[@class='text boxTitle boxText']/p[not(@*)]/text()")
+            
+        elif source == 'cna.com.tw':
+            date = response.html.xpath("//div[@class='updatetime']/span/text()")
+            article_contents = response.html.xpath("//div[@class='paragraph']/p/text()")
 
-    elif source == 'news.yahoo.com':
-        date = response.html.xpath(
-            "//div[@class='caas-attr-time-style']/time/text()")[0]
-        article_contents = response.html.xpath(
-            "//div[@class='caas-body']/p/text()")
+        elif source == 'news.yahoo.com':
+            date = response.html.xpath(
+                "//div[@class='caas-attr-time-style']/time/text()")[0]
+            article_contents = response.html.xpath(
+                "//div[@class='caas-body']/p/text()")
 
 
-    elif source == 'appledaily.com':
-        date = response.html.xpath(
-            "//div[@class='timestamp']/text()[2]")[0]
-        article_contents = response.html.xpath("//section/p/text()")
+        elif source == 'appledaily.com':
+            date = response.html.xpath(
+                "//div[@class='timestamp']/text()[2]")[0]
+            article_contents = response.html.xpath("//section/p/text()")
     except:
         pass
 
