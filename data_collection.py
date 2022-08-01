@@ -2,30 +2,37 @@ import requests
 import pandas as pd
 import arrow
 import trafilatura
-from lxml import etree
 from requests_html import HTML
 from requests_html import HTMLSession
-from stqdm import stqdm
-from datetime import tzinfo
 from pprint import pprint
 from serpapi import GoogleSearch
 from api_secrets import serpapi_key
 
-
-def google_search_api(query, n):
-    search = GoogleSearch({
+# result_type option: ['organic_results', 'news_results']
+def google_search_api(query, n, result_type='news_results', pagination=True):
+    pages = ['0', '10', '20'] if pagination else ['0']
+    params = {
         "q": query,
         "location": "taipei",
         "api_key": serpapi_key,
         "num": n,
-        "output": "json"
-    })
-    result = search.get_dict()
+        "output": "json",
+    }
+    if result_type == 'news_results':
+        params['tbm'] = 'nws'
+    results = []
+    for p in pages:
+        params['start'] = p
+        search = GoogleSearch(params)
+        result = search.get_dict()
+        results += result[result_type]
+
     output = []
-    for res in result['organic_results']:
+    for res in results:
         item = {
             'title': res['title'],
-            'link': res['link']
+            'link': res['link'],
+            'date': res.get('date')
         }
         output.append(item)
     return output
@@ -68,7 +75,8 @@ def parse_content(source, piece):
     date_str = ''
     article_contents = ''
     content = trafilatura.fetch_url(link)
-    article_contents = trafilatura.extract(content)
+    extracted = trafilatura.extract(content) if content else []
+    article_contents = ''.join(extracted) if extracted else ''
 
     if source == 'udn.com':
         # 'udn.com'會抓到經濟日報、轉角國際，但是其xpath與聯合報不同，需進行區分
@@ -199,11 +207,12 @@ def parse_content(source, piece):
             "//div[@class='article__header']/div/div[@class='timestamp']/text()"))
         # article_contents = response.html.xpath(
         #     "//section/p[@class='text--desktop text--mobile article-text-size_md tw-max_width']")
-
+    elif source == "twreporter.org":
+        response.html.xpath("//div[@class='metadata__DateSection-sc-1c3910m-3 gimsRe']/text()")
     # print(type(date_str))
     # print(date_str)
 
-    return {'title': piece['title'], 'date': date_str.format('YYYY/MM/DD HH:mm'), 'paragraph': ''.join(article_contents), 'source': source}
+    return {'title': piece['title'], 'date': date_str.format('YYYY/MM/DD HH:mm'), 'paragraph': article_contents, 'source': source}
 
 # 這個Fuction指定target_sources、要爬的事件、筆數(會與結果不同，因為會用target_sources篩選)之後可以直接生成df
 # 可用的target_sources:
