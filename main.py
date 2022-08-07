@@ -10,7 +10,7 @@ from articut import *
 from crawl_wiki import *
 # from naive_summarize import *
 # from kmeans_summarize import *
-from summarization.textrank_summarize import *
+# from summarization.textrank_summarize import *
 
 
 def cut_sentences(content):
@@ -46,10 +46,36 @@ if __name__ == '__main__':
     st.header("資料蒐集與爬取")
     n = st.number_input(
         "欲爬取的google搜尋結果頁數", 0, 1000, value=2)
+    
+    st.text("請勾選想要爬取的新聞網")
+    if st.checkbox("選取個別新聞網"):
+        target_sources = []
+        if st.checkbox("聯合報"):
+            target_sources.append('udn.com')
+        if st.checkbox("中國時報"):
+            target_sources.append('chinatimes.com')
+        if st.checkbox("TVBS"):
+            target_sources.append('news.tvbs.com')
+        if st.checkbox("三立新聞網"):
+            target_sources.append('setn.com')
+        if st.checkbox("自由時報"):
+            target_sources.append('ltn.com')
+        if st.checkbox("蘋果日報"):
+            target_sources.append('appledaily.com')
+        if st.checkbox("Yahoo奇摩新聞"):
+            target_sources.append('news.yahoo.com')
+        if st.checkbox("風傳媒"):
+            target_sources.append('storm.mg')
+        if st.checkbox("中央社CNA"):
+            target_sources.append('cna.com.tw')
+    else:
+        target_sources = ['udn.com', 'chinatimes.com',
+                        'news.tvbs.com', 'setn.com', 'ltn.com', 'appledaily.com', 'news.yahoo.com', 'storm.mg', 'cna.com.tw']
+    st.header("開始爬取")
     if st.checkbox("開始爬取"):
         st.write('資料蒐集進行中...')
         tic = time.perf_counter()
-        news, num = collect_data(event, n)
+        news, num = collect_data(target_sources, event, n)
         with open('./raw_news_{}.json'.format(event), 'w', encoding='utf-8') as fh:
             json.dump(news, fh, ensure_ascii=False)
 
@@ -70,7 +96,8 @@ if __name__ == '__main__':
                         continue
             st.subheader("資料來源")
             st.write(source_dt)
-            news_df.to_csv('output.csv', index=False, encoding="utf-8-sig")
+            st.write(news_df)
+            #news_df.to_csv('output.csv', index=False, encoding="utf-8-sig")
         else:
             news_df = pd.read_csv("../scraper/filtered_data.csv")
             st.write(news_df.source.value_counts())
