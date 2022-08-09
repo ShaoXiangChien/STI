@@ -1,9 +1,7 @@
-from base64 import encode
 from pprint import pprint
 import pandas as pd
 import re
 import math
-
 
 
 def clean_df(df):
@@ -13,9 +11,11 @@ def clean_df(df):
             udn_expert_eyes = re.compile('【專家之眼】')
             udn_news_type = re.compile('.+／')
             udn_udn = re.compile('聯合新聞網')
-            udn_end = re.compile('延伸閱讀')
-            udn_news_info = re.compile('〔記者.+／.+報導〕')
             udn_listen_start = re.compile('0:00 / 0:00\n')
+            udn_end1 = re.compile('延伸閱讀')
+            udn_end2 = re.compile('（綜合報導）')
+            udn_news_info = re.compile('〔記者.+／.+報導〕')
+            udn_keep_reading=re.compile('...繼續閱讀')
 
             row['title'] = re.sub(udn_udn, '', row['title'])
             row['title'] = re.sub(udn_expert_eyes, '', row['title'])
@@ -24,10 +24,15 @@ def clean_df(df):
             if udn_listen_start.search(row['paragraph']):
                 start = udn_listen_start.search(row['paragraph']).span()[1]
                 row['paragraph'] = row['paragraph'][start:]
-            if udn_end.search(row['paragraph']):
-                stop = udn_end.search(row['paragraph']).span()[0]
+            if udn_end1.search(row['paragraph']):
+                stop = udn_end1.search(row['paragraph']).span()[0]
+                row['paragraph'] = row['paragraph'][:stop]
+            elif udn_end2.search(row['paragraph']):
+                stop = udn_end2.search(row['paragraph']).span()[0]
                 row['paragraph'] = row['paragraph'][:stop]
             row['paragraph'] = re.sub(udn_news_info, '', row['paragraph'])
+            row['paragraph'] = re.sub(udn_keep_reading, '', row['paragraph'])
+            
 
         elif row['source'] == 'chinatimes.com':
             chinatimes_news_type = re.compile('.+》')
@@ -151,12 +156,10 @@ def clean_df(df):
                 row['paragraph'] = re.sub(
                     storm_timestamp, '', row['paragraph'], 1)
                 if math.isnan(row['date']):
-                    print(f'Found {index} date is empty!')
                     row['date'] = time
             row['paragraph'] = re.sub(storm_pict, '', row['paragraph'])
 
         elif row['source'] == 'cna.com.tw':
             continue
-    
     return df
 
