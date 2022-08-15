@@ -3,8 +3,9 @@ import pandas as pd
 import re
 import math
 
-
 def clean_df(df):
+    df.drop_duplicates(subset='title',inplace=True)
+
     for index, row in df.iterrows():
         row['paragraph'] = re.sub(row['title']+'\n', '', row['paragraph'])
         if row['source'] == 'udn.com':
@@ -14,6 +15,7 @@ def clean_df(df):
             udn_listen_start = re.compile('0:00 / 0:00\n')
             udn_end1 = re.compile('延伸閱讀')
             udn_end2 = re.compile('（綜合報導）')
+            udn_end3 = re.compile('贊助廣告')
             udn_news_info = re.compile('〔記者.+／.+報導〕')
             udn_keep_reading=re.compile('...繼續閱讀')
 
@@ -29,6 +31,9 @@ def clean_df(df):
                 row['paragraph'] = row['paragraph'][:stop]
             elif udn_end2.search(row['paragraph']):
                 stop = udn_end2.search(row['paragraph']).span()[0]
+                row['paragraph'] = row['paragraph'][:stop]
+            elif udn_end3.search(row['paragraph']):
+                stop = udn_end3.search(row['paragraph']).span()[0]
                 row['paragraph'] = row['paragraph'][:stop]
             row['paragraph'] = re.sub(udn_news_info, '', row['paragraph'])
             row['paragraph'] = re.sub(udn_keep_reading, '', row['paragraph'])
@@ -103,6 +108,7 @@ def clean_df(df):
             yahoo_end5 = re.compile('延伸閱讀》.+')
             yahoo_end6 = re.compile('更多相關新聞\n')
             yahoo_end7 = re.compile('更多.*文章')
+            yahoo_end8 = re.compile('延伸閱讀：')
             yahoo_pict1 = re.compile('.*(.*圖/.+)\n|.*(.*圖／.+)\n')
             yahoo_pict2 = re.compile('照片來源：.+\n')
 
@@ -129,6 +135,9 @@ def clean_df(df):
                 row['paragraph'] = row['paragraph'][:end]
             elif yahoo_end7.search(row['paragraph']):
                 end = yahoo_end7.search(row['paragraph']).span()[0]
+                row['paragraph'] = row['paragraph'][:end]
+            if yahoo_end8.search(row['paragraph']):
+                end = yahoo_end8.search(row['paragraph']).span()[0]
                 row['paragraph'] = row['paragraph'][:end]
 
             row['paragraph'] = re.sub(yahoo_news_info1, '', row['paragraph'])
