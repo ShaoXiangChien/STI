@@ -12,13 +12,12 @@ cursor = conn.cursor()
 inputdataframe=pd.read_sql("SELECT * FROM News",conn)
 inputdataframe=inputdataframe.replace("","NA")
 """
-username = "loveyoosic4ever@gmail.com"
-apikey = "=Zs6wI!L_KRO&_Ff3H5VQx3Fx145A%v"
-articut = Articut(username, apikey)
+articut = Articut(username="yishin@gmail.com",
+                  apikey="UGqaeo46Aw+4HI#q2^P-pAbz!yPXxx6")
 # inputdataframe = pd.read_csv("output.csv")
 
 
-@st.experimental_memo(suppress_st_warning=True)
+# @st.experimental_memo(suppress_st_warning=True)
 def Tokenization(df):
     # 這裡填入您在 https://api.droidtown.co 使用的帳號 email。若使用空字串，則預設使用每小時 2000 字的公用額度。
     # 這裡填入您在 https://api.droidtown.co 登入後取得的 api Key。若使用空字串，則預設使用每小時 2000 字的公用額度。
