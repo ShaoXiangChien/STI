@@ -30,13 +30,13 @@ def keyword_extract(method, text):
 def summarize(method, df):
     st.write("Initializing")
     if method == "naive":
-        import naive_summarize as sm
+        import summarization.naive_summarize as sm
     elif method == "kmeans":
-        import kmeans_summarize as sm
+        import summarization.kmeans_summarize as sm
     elif method == "textrank":
         import summarization.textrank_summarize as sm
     elif method == "openai":
-        pass
+        import openai_services as sm
 
 
 def cut_sentences(content):

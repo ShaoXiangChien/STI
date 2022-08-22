@@ -23,7 +23,7 @@ client = authenticate_client()
 # Example method for summarizing text
 
 
-def extractive_summarization(document):
+def azure_summarize(document):
     global client
 
     poller = client.begin_analyze_actions(
