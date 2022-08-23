@@ -7,7 +7,7 @@ articut = Articut(username="yishin@gmail.com",
 # 不用斷詞
 
 
-def textrank_keyword_extraction(df):
+def textrank_kw_extract(df):
     df.title = df.title.astype(str)
     df.paragraph = df.paragraph.astype(str)
     text = "".join(df.title.to_list() + df.paragraph.to_list())

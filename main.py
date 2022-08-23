@@ -12,7 +12,7 @@ from clean_df import *
 from metrics import *
 
 KW_METHODS = ['tfidf', 'textrank',
-              'azure language service', 'ckip', 'ckip_tfidf']
+              'azure language service', 'ckip', 'ckip_tfidf', 'openai']
 SM_METHODS = ['naive', 'kmeans', 'textrank', 'openai']
 start_tokenize = False
 start_kw_extract = False
@@ -22,9 +22,27 @@ news_df = pd.DataFrame()
 event = ""
 
 
-def keyword_extract(method, text):
-    if method == "naive":
-        pass
+def keyword_extract(method, df):
+    if method == "tfidf":
+        import keyword_extraction.tfidf_kw_extract as kw
+        keywords = kw.tfidf_kw_extract(df)
+    elif method == "textrank":
+        import keyword_extraction.textrank_kw_extract as kw
+        keywords = kw.textrank_kw_extract(df)
+    elif method == "azure language service":
+        import keyword_extraction.azure_kw_extract as kw
+        keywords = kw.azure_kw_extract(df)
+    elif method == "ckip":
+        import keyword_extraction.ckip_kw_extract as kw
+        keywords = kw.ckip_kw_extract(df)
+    elif method == "ckip_tfidf":
+        import keyword_extraction.ckip_tfidf_kw_extract as kw
+        keywords = kw.ckip_tfidf_kw_extract(df)
+    else:
+        import keyword_extraction.openai_kw_extract as kw
+        keywords = kw.openai_kw_extract(df)
+
+    return keywords
 
 
 def summarize(method, df):
@@ -95,41 +113,89 @@ if __name__ == '__main__':
                                     continue
                         st.subheader("資料來源")
                         st.write(source_dt)
+
                         news_df = clean_df(news_df)
                         news_df = Tokenization(news_df)
+                        news_df['full_text'] = news_df.apply(lambda x: str(
+                            x['title']) + " " + str(x['paragraph']), axis=1)
+                        news_df['full_text_tokens'] = news_df.apply(lambda x: str(
+                            x['title_tokens']) + " " + str(x['paragraph_tokens']), axis=1)
                         news_df.to_csv(f'./Experiments/{event}_news.csv', index=False,
                                        encoding="utf-8-sig")
+                        st.session_state['news_df'] = news_df
                         st.write(news_df)
             else:
                 uploaded_file = st.file_uploader("Choose a file")
                 if uploaded_file is not None:
                     news_df = pd.read_csv(uploaded_file)
-                    st.write(news_df)
+                    with st.form("Read file form"):
+                        clean_required = st.checkbox("Require data cleaning")
+                        tokenization_required = st.checkbox(
+                            "Require Tokenization")
+                        submitted = st.form_submit_button("Submit")
+
+                    if submitted:
+                        if clean_required:
+                            news_df = clean_df(news_df)
+
+                        if tokenization_required:
+                            news_df = Tokenization(news_df)
+                            news_df['full_text'] = news_df.apply(lambda x: str(
+                                x['title']) + " " + str(x['paragraph']), axis=1)
+                            news_df['full_text_tokens'] = news_df.apply(lambda x: str(
+                                x['title_tokens']) + " " + str(x['paragraph_tokens']), axis=1)
+                        st.session_state['news_df'] = news_df
+                        news_df.to_csv(uploaded_file.name, index=False)
+                        st.write(news_df)
                 else:
                     st.warning("The uploaded file is empty")
 
         elif stage == "Keyword Extraction":
             st.header("關鍵字萃取方法測試")
-            with st.form("keyword form"):
-                ans = st.text_input("輸入自訂關鍵字答案，請用空白間隔開").split(" ")
-                kw_method = st.selectbox("Select a method", KW_METHODS)
-                submitted = st.form_submit_button("Submit")
+            news_df = st.session_state['news_df']
+            if news_df.shape[0] == 0:
+                st.warning("news_df is empty, please collect data first.")
+                st.write(news_df)
+            else:
+                with st.form("keyword form"):
+                    ans = st.text_input("輸入自訂關鍵字答案，請用空白間隔開").split(" ")
+                    kw_method = st.selectbox("Select a method", KW_METHODS)
+                    submitted = st.form_submit_button("Submit")
 
-            if submitted:
-                st.write("Extracting")
-                keywords = keyword_extract(kw_method, news_df)
-                score = keyword_eval(ans, keywords)
-                st.write("Extraction complete")
-                st.write(f"Expected Output: {' '.join(ans)}")
-                st.write(f"Actual Output: {' '.join(keywords)}")
-                st.write(f"MAP Score: {score:.2f}")
+                if submitted:
+                    st.write("Extracting")
+                    keywords = keyword_extract(kw_method, news_df)
+                    st.write(keywords)
+                    if len(keywords) != 1:
+                        map_score = keyword_map_eval(ans, keywords)
+                        hits, precision = keyword_precision_eval(ans, keywords)
+                        with open(f"{event}_{kw_method}_keywords.txt", 'w') as fh:
+                            fh.writelines((kw + "\n" for kw in keywords))
+
+                        st.write("Extraction complete")
+                        st.write(f"Expected Output: {' '.join(ans)}")
+                        st.write(f"Actual Output: {' '.join(keywords)}")
+                        st.write(f"Precision: {precision:.2f}")
+                        st.write(f"Num of Hit: {hits}")
+                        st.write(f"MAP Score: {map_score:.2f}")
+                        with open(f"{event}_{kw_method}_scores.json", 'w') as fh:
+                            json.dump({
+                                "precision": precision,
+                                "hit": hits,
+                                "map": map_score
+                            }, fh)
+                    else:
+                        st.write(f"Extracted Keywords: {keywords}")
         else:
             st.header("摘要方法測試")
-            sm_method = st.selectbox("Select a method", SM_METHODS)
-            summary = summarize(sm_method, news_df)
-            st.write(summary)
-            with open(f"./Experiments/{event}_{sm_method}_summary.txt", "w") as fh:
-                fh.write(summary)
+            if news_df.shape[0] == 0:
+                st.warning("news_df is empty, please collect data first.")
+            else:
+                sm_method = st.selectbox("Select a method", SM_METHODS)
+                summary = summarize(sm_method, news_df)
+                st.write(summary)
+                with open(f"./Experiments/{event}_{sm_method}_summary.txt", "w") as fh:
+                    fh.write(summary)
 
     elif mode == "Live Demo":
         pass

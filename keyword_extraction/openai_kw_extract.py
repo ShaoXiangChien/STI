@@ -7,7 +7,7 @@ openai.api_type = 'azure'
 openai.api_version = '2022-06-01-preview'
 
 
-def keyword_extract(df):
+def openai_kw_extract(df):
     print('Sending a test completion job')
     doc = " ".join(df['full_text'].to_list())
     doc = doc[:1500] if len(doc) > 4000 else doc
