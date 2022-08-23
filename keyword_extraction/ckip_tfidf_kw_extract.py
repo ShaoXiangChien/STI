@@ -30,3 +30,6 @@ def ckip_tfidf_kw_extract(df):
                     ckip_kwd[entity[3]] = 1
                 else:
                     ckip_kwd[entity[3]] += 1
+
+    ckip_tfidf_dt = {k: tfidf_kwd[k]
+                     for k in ckip_kwd.keys() if tfidf_kwd.get(k)}
