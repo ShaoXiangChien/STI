@@ -1,14 +1,14 @@
-from keyword_extraction import *
+from keyword_extraction.textrank_kw_extract import *
 from articut import *
 import pandas as pd
 
 news1 = pd.read_csv("./Crawled data/普悠瑪事件 data.csv")
 news1.paragraph = news1.paragraph.astype(str)
 news1.title = news1.title.astype(str)
-news2=pd.read_csv("./Crawled data/龍龍老K data.csv")
+news2 = pd.read_csv("./Crawled data/龍龍老K data.csv")
 news2.paragraph = news2.paragraph.astype(str)
 news2.title = news2.title.astype(str)
-news3=pd.read_csv("./Crawled data/烏俄戰爭 data.csv")
+news3 = pd.read_csv("./Crawled data/烏俄戰爭 data.csv")
 news3.paragraph = news3.paragraph.astype(str)
 news3.title = news3.title.astype(str)
 

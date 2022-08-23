@@ -47,6 +47,3 @@ def azure_summarize(document):
             print("Summary extracted: \n{}".format(text))
             summary += text
     return summary
-
-
-# sample_extractive_summarization(client)
