@@ -9,8 +9,10 @@ from data_collection import *
 from articut import *
 from crawl_wiki import *
 from clean_df import *
+from metrics import *
 
-KW_METHODS = ['tfidf', 'textrank', 'azure language service', 'ckip']
+KW_METHODS = ['tfidf', 'textrank',
+              'azure language service', 'ckip', 'ckip_tfidf']
 SM_METHODS = ['naive', 'kmeans', 'textrank', 'openai']
 start_tokenize = False
 start_kw_extract = False
@@ -107,7 +109,20 @@ if __name__ == '__main__':
                     st.warning("The uploaded file is empty")
 
         elif stage == "Keyword Extraction":
-            pass
+            st.header("關鍵字萃取方法測試")
+            with st.form("keyword form"):
+                ans = st.text_input("輸入自訂關鍵字答案，請用空白間隔開").split(" ")
+                kw_method = st.selectbox("Select a method", KW_METHODS)
+                submitted = st.form_submit_button("Submit")
+
+            if submitted:
+                st.write("Extracting")
+                keywords = keyword_extract(kw_method, news_df)
+                score = keyword_eval(ans, keywords)
+                st.write("Extraction complete")
+                st.write(f"Expected Output: {' '.join(ans)}")
+                st.write(f"Actual Output: {' '.join(keywords)}")
+                st.write(f"MAP Score: {score:.2f}")
         else:
             st.header("摘要方法測試")
             sm_method = st.selectbox("Select a method", SM_METHODS)

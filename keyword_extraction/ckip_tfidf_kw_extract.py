@@ -33,3 +33,6 @@ def ckip_tfidf_kw_extract(df):
 
     ckip_tfidf_dt = {k: tfidf_kwd[k]
                      for k in ckip_kwd.keys() if tfidf_kwd.get(k)}
+    keywords = list(
+        dict(sorted(ckip_tfidf_dt.items(), key=lambda x: x[1], reverse=True)).keys())[:20]
+    return keywords

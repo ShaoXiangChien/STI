@@ -21,9 +21,9 @@ def authenticate_client():
 client = authenticate_client()
 
 
-def azure_kw_extract(document):
+def azure_kw_extract(df):
     global client
-    documents = [document]
+    documents = df['full_text'].to_list()
     response = client.extract_key_phrases(documents, language="zh")
     result = [doc for doc in response if not doc.is_error]
     return result[0].key_phrases[:20]

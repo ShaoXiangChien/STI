@@ -26,4 +26,6 @@ def ckip_kw_extract(df):
                     kwd_dict[entity[3]] = 1
                 else:
                     kwd_dict[entity[3]] += 1
-    return kwd_dict
+    keywords = list(
+        dict(sorted(kwd_dict.items(), key=lambda x: x[1], reverse=True)).keys())[:20]
+    return keywords
