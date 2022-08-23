@@ -9,13 +9,15 @@ from serpapi import GoogleSearch
 from api_secrets import serpapi_key
 
 # result_type option: ['organic_results', 'news_results']
-def google_search_api(query, n, result_type='news_results', pagination=True):
+
+
+def collect_data(query, result_type='news_results', pagination=True):
     pages = ['0', '10', '20'] if pagination else ['0']
     params = {
         "q": query,
         "location": "taipei",
         "api_key": serpapi_key,
-        "num": n,
+        "num": 100,
         "output": "json",
     }
     if result_type == 'news_results':
@@ -38,16 +40,23 @@ def google_search_api(query, n, result_type='news_results', pagination=True):
     return output
 
 
-def collect_target_news(target_sources, results):
+def collect_target_news(results):
     # with open('./result.json', 'w', encoding='utf8') as fh:
     #     json.dump(results, fh)
+    target_sources = ['udn.com', 'chinatimes.com',
+                      'news.tvbs.com', 'setn.com', 'ltn.com', 'appledaily.com', 'news.yahoo.com', 'storm.mg', 'cna.com.tw', 'others']
     desired_news = {ta: [] for ta in target_sources}
     for res in results:
+        matched = False
         for ta in target_sources:
             if ta in res['link']:
                 desired_news[ta].append(res)
+                matched = True
                 break
-    return desired_news, len(results)
+        if not matched:
+            desired_news['others'].append(res)
+
+    return desired_news
 
 
 def get_source(url):
@@ -88,8 +97,6 @@ def parse_content(source, piece):
                 date_str, 'YYYY-MM-DD HH:mm').replace(tzinfo='local')
         except:
             pass
-        # article_contents = response.html.xpath(
-        #     "//section[@class='article-content__editor']/p/text()")
 
     elif source == 'chinatimes.com':
         # 'chinatimes.com'會抓到Yahoo新聞的資料
@@ -106,8 +113,6 @@ def parse_content(source, piece):
                 date_str, 'YYYY/MM/DD HH:mm').replace(tzinfo='local')
         except:
             pass
-        # article_contents = response.html.xpath(
-        #     "//div[@class='article-body']/p/text()")
 
     elif source == 'news.tvbs.com':
         # 有時會選到新聞網搜尋系統的結果，導致Parse內容抓不到東西
@@ -120,8 +125,6 @@ def parse_content(source, piece):
                 date_str, 'YYYY/MM/DD HH:mm').replace(tzinfo='local')
         except:
             pass
-        # article_contents = response.html.xpath(
-        #     "//div[@class='article_content']/text()")
 
     elif source == 'setn.com':
         date_str = date_str.join(response.html.xpath(
@@ -132,8 +135,6 @@ def parse_content(source, piece):
                 date_str, 'YYYY/MM/DD HH:mm:ss').replace(tzinfo='local')
         except:
             pass
-        # article_contents = response.html.xpath(
-        #     "//*[@id='Content1']/p/text()")
 
     elif source == 'storm.mg':
         date_str = date_str.join(response.html.xpath(
@@ -144,8 +145,6 @@ def parse_content(source, piece):
                 date_str, 'YYYY-MM-DD HH:mm').replace(tzinfo='local')
         except:
             pass
-        # article_contents = response.html.xpath(
-        #     "//div[@class='article_content_inner']/p/text()")
 
     elif source == 'ltn.com':
         date_str = date_str.join(response.html.xpath(
@@ -156,8 +155,6 @@ def parse_content(source, piece):
                 date_str, 'YYYY/MM/DD HH:mm').replace(tzinfo='local')
         except:
             pass
-        # article_contents = response.html.xpath(
-        #     "//div[@class='text boxTitle boxText']/p[not(@*)]/text()")
 
     elif source == 'cna.com.tw':
         date_str = date_str.join(response.html.xpath(
@@ -170,8 +167,6 @@ def parse_content(source, piece):
             date_str = arrow.get(date_str).replace(tzinfo='local')
         except:
             pass
-        # article_contents = response.html.xpath(
-        #     "//div[@class='paragraph']/p/text()")
 
     elif source == 'news.yahoo.com':
         date_str = date_str.join(response.html.xpath(
@@ -199,18 +194,13 @@ def parse_content(source, piece):
             print(f'sd : {date_str}')
         except:
             pass
-        # article_contents = response.html.xpath(
-        #     "//div[@class='caas-body']/p/text()")
 
     elif source == 'appledaily.com':
         date_str = date_str.join(response.html.xpath(
             "//div[@class='article__header']/div/div[@class='timestamp']/text()"))
-        # article_contents = response.html.xpath(
-        #     "//section/p[@class='text--desktop text--mobile article-text-size_md tw-max_width']")
     elif source == "twreporter.org":
-        response.html.xpath("//div[@class='metadata__DateSection-sc-1c3910m-3 gimsRe']/text()")
-    # print(type(date_str))
-    # print(date_str)
+        response.html.xpath(
+            "//div[@class='metadata__DateSection-sc-1c3910m-3 gimsRe']/text()")
 
     return {'title': piece['title'], 'date': date_str.format('YYYY/MM/DD HH:mm'), 'paragraph': article_contents, 'source': source}
 
@@ -218,6 +208,8 @@ def parse_content(source, piece):
 # 可用的target_sources:
 # target_sources = ['udn.com', 'chinatimes.com',
 #                        'news.tvbs.com', 'setn.com', 'ltn.com', 'appledaily.com', 'news.yahoo.com', 'storm.mg', 'cna.com.tw']
+
+
 def news_to_df(target_sources, event, n):
     result_df = google_search_api(event, n)
     news, num = collect_target_news(target_sources, result_df)
