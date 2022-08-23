@@ -88,6 +88,7 @@ if __name__ == '__main__':
                                      "Data Collection", "Keyword Extraction", "Summarization"])
         if stage == "Data Collection":
             event = st.text_input("請輸入您想搜尋的事件", "萊豬")
+            st.session_state['event'] = event
             st.header("資料蒐集與爬取")
             data_source = st.selectbox("資料來源", ['Crawl Now', 'Upload File'])
             if data_source == "Crawl Now":
@@ -120,7 +121,7 @@ if __name__ == '__main__':
                             x['title']) + " " + str(x['paragraph']), axis=1)
                         news_df['full_text_tokens'] = news_df.apply(lambda x: str(
                             x['title_tokens']) + " " + str(x['paragraph_tokens']), axis=1)
-                        news_df.to_csv(f'./Experiments/{event}_news.csv', index=False,
+                        news_df.to_csv(f'./Experiments/{st.session_state['event']}_news.csv', index=False,
                                        encoding="utf-8-sig")
                         st.session_state['news_df'] = news_df
                         st.write(news_df)
@@ -169,7 +170,7 @@ if __name__ == '__main__':
                     if len(keywords) != 1:
                         map_score = keyword_map_eval(ans, keywords)
                         hits, precision = keyword_precision_eval(ans, keywords)
-                        with open(f"{event}_{kw_method}_keywords.txt", 'w') as fh:
+                        with open(f"{st.session_state['event']}_{kw_method}_keywords.txt", 'w') as fh:
                             fh.writelines((kw + "\n" for kw in keywords))
 
                         st.write("Extraction complete")
@@ -178,7 +179,7 @@ if __name__ == '__main__':
                         st.write(f"Precision: {precision:.2f}")
                         st.write(f"Num of Hit: {hits}")
                         st.write(f"MAP Score: {map_score:.2f}")
-                        with open(f"{event}_{kw_method}_scores.json", 'w') as fh:
+                        with open(f"{st.session_state['event']}_{kw_method}_scores.json", 'w') as fh:
                             json.dump({
                                 "precision": precision,
                                 "hit": hits,
@@ -194,7 +195,7 @@ if __name__ == '__main__':
                 sm_method = st.selectbox("Select a method", SM_METHODS)
                 summary = summarize(sm_method, news_df)
                 st.write(summary)
-                with open(f"./Experiments/{event}_{sm_method}_summary.txt", "w") as fh:
+                with open(f"./Experiments/{st.session_state['event']}_{sm_method}_summary.txt", "w") as fh:
                     fh.write(summary)
 
     elif mode == "Live Demo":
