@@ -185,7 +185,6 @@ def parse_content(source, piece):
         try:
             date_str = arrow.get(
                 date_str, 'YYYY年M月D日 Ah:mm').replace(tzinfo='local')
-            print(f'sd : {date_str}')
         except:
             pass
 
