@@ -1,0 +1,8 @@
+streamlit
+berTopic
+arrow
+ArticutAPI
+tensorflow==1.13.1
+ckiptagger
+openai
+azure-ai-textanalytics

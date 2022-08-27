@@ -8,9 +8,53 @@ import json
 from data_collection import *
 from articut import *
 from crawl_wiki import *
-# from naive_summarize import *
-# from kmeans_summarize import *
-# from summarization.textrank_summarize import *
+from clean_df import *
+from metrics import *
+
+KW_METHODS = ['tfidf', 'textrank',
+              'azure language service', 'ckip', 'ckip_tfidf', 'openai']
+SM_METHODS = ['naive', 'kmeans', 'textrank', 'openai']
+start_tokenize = False
+start_kw_extract = False
+start_bg_search = False
+start_summary = False
+news_df = pd.DataFrame()
+event = ""
+
+
+def keyword_extract(method, df):
+    if method == "tfidf":
+        import keyword_extraction.tfidf_kw_extract as kw
+        keywords = kw.tfidf_kw_extract(df)
+    elif method == "textrank":
+        import keyword_extraction.textrank_kw_extract as kw
+        keywords = kw.textrank_kw_extract(df)
+    elif method == "azure language service":
+        import keyword_extraction.azure_kw_extract as kw
+        keywords = kw.azure_kw_extract(df)
+    elif method == "ckip":
+        import keyword_extraction.ckip_kw_extract as kw
+        keywords = kw.ckip_kw_extract(df)
+    elif method == "ckip_tfidf":
+        import keyword_extraction.ckip_tfidf_kw_extract as kw
+        keywords = kw.ckip_tfidf_kw_extract(df)
+    else:
+        import keyword_extraction.openai_kw_extract as kw
+        keywords = kw.openai_kw_extract(df)
+
+    return keywords
+
+
+def summarize(method, df):
+    st.write("Initializing")
+    if method == "naive":
+        import summarization.naive_summarize as sm
+    elif method == "kmeans":
+        import summarization.kmeans_summarize as sm
+    elif method == "textrank":
+        import summarization.textrank_summarize as sm
+    elif method == "openai":
+        import openai_services as sm
 
 
 def cut_sentences(content):
@@ -36,113 +80,175 @@ def cut_sentences(content):
 
 
 if __name__ == '__main__':
-    start_tokenize = False
-    start_kw_extract = False
-    start_bg_search = False
-    start_summary = False
-
     st.title("時事圖文懶人包自動生成器")
-    event = st.text_input("請輸入您想搜尋的事件", "萊豬")
-    st.header("資料蒐集與爬取")
-    n = st.number_input(
-        "欲爬取的google搜尋結果頁數", 0, 1000, value=2)
-    
-    st.text("請勾選想要爬取的新聞網")
-    if st.checkbox("選取個別新聞網"):
-        target_sources = []
-        if st.checkbox("聯合報"):
-            target_sources.append('udn.com')
-        if st.checkbox("中國時報"):
-            target_sources.append('chinatimes.com')
-        if st.checkbox("TVBS"):
-            target_sources.append('news.tvbs.com')
-        if st.checkbox("三立新聞網"):
-            target_sources.append('setn.com')
-        if st.checkbox("自由時報"):
-            target_sources.append('ltn.com')
-        if st.checkbox("蘋果日報"):
-            target_sources.append('appledaily.com')
-        if st.checkbox("Yahoo奇摩新聞"):
-            target_sources.append('news.yahoo.com')
-        if st.checkbox("風傳媒"):
-            target_sources.append('storm.mg')
-        if st.checkbox("中央社CNA"):
-            target_sources.append('cna.com.tw')
-    else:
-        target_sources = ['udn.com', 'chinatimes.com',
-                        'news.tvbs.com', 'setn.com', 'ltn.com', 'appledaily.com', 'news.yahoo.com', 'storm.mg', 'cna.com.tw']
-    st.header("開始爬取")
-    if st.checkbox("開始爬取"):
-        st.write('資料蒐集進行中...')
-        tic = time.perf_counter()
-        news, num = collect_data(target_sources, event, n)
-        with open('./raw_news_{}.json'.format(event), 'w', encoding='utf-8') as fh:
-            json.dump(news, fh, ensure_ascii=False)
 
-        toc = time.perf_counter()
-        st.success(
-            f"在{toc - tic:0.4f}秒後搜集了{num}筆可用的資料")
-        if num != 0:
-            news_df = pd.DataFrame()
-            source_dt = {}
-            for k, v in news.items():
-                source_dt[k] = len(v)
-                for piece in v:
-                    try:
-                        row = pd.DataFrame(parse_content(
-                            k, piece), index=[0])
-                        news_df = pd.concat([news_df, row], ignore_index=True)
-                    except:
-                        continue
-            st.subheader("資料來源")
-            st.write(source_dt)
-            st.write(news_df)
-            #news_df.to_csv('output.csv', index=False, encoding="utf-8-sig")
+    mode = st.selectbox("Select a mode", ["Experiment", "Live Demo"])
+    if mode == "Experiment":
+        stage = st.sidebar.selectbox("Select the task you want to perform", [
+                                     "Data Collection", "Keyword Extraction", "Summarization"])
+        if stage == "Data Collection":
+            event = st.text_input("請輸入您想搜尋的事件", "萊豬")
+            st.session_state['event'] = event
+            st.header("資料蒐集與爬取")
+            data_source = st.selectbox("資料來源", ['Crawl Now', 'Upload File'])
+            if data_source == "Crawl Now":
+                if st.checkbox("開始爬取"):
+                    st.write('資料蒐集進行中...')
+                    tic = time.perf_counter()
+                    news = collect_data(event)
+                    num = len(news)
+                    toc = time.perf_counter()
+                    st.success(
+                        f"在{toc - tic:0.4f}秒後搜集了{num}筆可用的資料")
+                    if num != 0:
+                        source_dt = collect_target_news(news)
+                        for k, v in source_dt.items():
+                            source_dt[k] = len(v)
+                            for piece in v:
+                                try:
+                                    row = pd.DataFrame(parse_content(
+                                        k, piece), index=[0])
+                                    news_df = pd.concat(
+                                        [news_df, row], ignore_index=True, axis=0)
+                                except:
+                                    continue
+                        st.subheader("資料來源")
+                        st.write(source_dt)
+
+                        news_df = clean_df(news_df)
+                        news_df = Tokenization(news_df)
+                        news_df['full_text'] = news_df.apply(lambda x: str(
+                            x['title']) + " " + str(x['paragraph']), axis=1)
+                        news_df['full_text_tokens'] = news_df.apply(lambda x: str(
+                            x['title_tokens']) + " " + str(x['paragraph_tokens']), axis=1)
+                        news_df.to_csv(f"./Experiments/{st.session_state['event']}/news.csv", index=False,
+                                       encoding="utf-8-sig")
+                        st.session_state['news_df'] = news_df
+                        st.write(news_df)
+            else:
+                uploaded_file = st.file_uploader("Choose a file")
+                if uploaded_file is not None:
+                    news_df = pd.read_csv(uploaded_file)
+                    with st.form("Read file form"):
+                        clean_required = st.checkbox("Require data cleaning")
+                        tokenization_required = st.checkbox(
+                            "Require Tokenization")
+                        submitted = st.form_submit_button("Submit")
+
+                    if submitted:
+                        if clean_required:
+                            news_df = clean_df(news_df)
+
+                        if tokenization_required:
+                            news_df = Tokenization(news_df)
+                            news_df['full_text'] = news_df.apply(lambda x: str(
+                                x['title']) + " " + str(x['paragraph']), axis=1)
+                            news_df['full_text_tokens'] = news_df.apply(lambda x: str(
+                                x['title_tokens']) + " " + str(x['paragraph_tokens']), axis=1)
+                        st.session_state['news_df'] = news_df
+                        news_df.to_csv(uploaded_file.name, index=False)
+                        st.write(news_df)
+                else:
+                    st.warning("The uploaded file is empty")
+
+        elif stage == "Keyword Extraction":
+            st.header("關鍵字萃取方法測試")
+            news_df = st.session_state['news_df']
+            if news_df.shape[0] == 0:
+                st.warning("news_df is empty, please collect data first.")
+                st.write(news_df)
+            else:
+                with st.form("keyword form"):
+                    ans = st.text_input("輸入自訂關鍵字答案，請用空白間隔開").split(" ")
+                    kw_method = st.selectbox("Select a method", KW_METHODS)
+                    submitted = st.form_submit_button("Submit")
+
+                if submitted:
+                    st.write("Extracting")
+                    keywords = keyword_extract(kw_method, news_df)
+                    st.write(keywords)
+                    if len(keywords) != 1:
+                        map_score = keyword_map_eval(ans, keywords)
+                        hits, precision = keyword_precision_eval(ans, keywords)
+                        with open(f"./Experiments/{st.session_state['event']}/{kw_method}_keywords.txt", 'w') as fh:
+                            fh.writelines((kw + "\n" for kw in keywords))
+
+                        st.write("Extraction complete")
+                        st.write(f"Expected Output: {' '.join(ans)}")
+                        st.write(f"Actual Output: {' '.join(keywords)}")
+                        st.write(f"Precision: {precision:.2f}")
+                        st.write(f"Num of Hit: {hits}")
+                        st.write(f"MAP Score: {map_score:.2f}")
+                        with open(f"./Experiments/{st.session_state['event']}/{kw_method}_scores.json", 'w') as fh:
+                            json.dump({
+                                "precision": precision,
+                                "hit": hits,
+                                "map": map_score
+                            }, fh)
+                    else:
+                        st.write(f"Extracted Keywords: {keywords}")
         else:
-            news_df = pd.read_csv("../scraper/filtered_data.csv")
-            st.write(news_df.source.value_counts())
-        # sentences = []
-        # for paragraph in news_df[news_df.paragraph.notnull()].paragraph.apply(lambda x: cut_sentences(x)):
-        #     sentences += paragraph
-        start_kw_extract = True
-    # news_df = pd.read_csv("./output.csv")
-    # st.write(news_df)
-    # start_kw_extract = True
+            st.header("摘要方法測試")
+            if news_df.shape[0] == 0:
+                st.warning("news_df is empty, please collect data first.")
+            else:
+                sm_method = st.selectbox("Select a method", SM_METHODS)
+                summary = summarize(sm_method, news_df)
+                st.write(summary)
+                with open(f"./Experiments/{st.session_state['event']}_{sm_method}_summary.txt", "w") as fh:
+                    fh.write(summary)
 
-    # st.header("斷詞")
-    # if start_tokenize:
-    #     news_df = Tokenization(news_df)
-    #     st.success("斷詞完成")
-    #     start_kw_extract = True
+    elif mode == "Live Demo":
+        pass
+        # event = st.text_input("請輸入您想搜尋的事件", "萊豬")
+        # st.header("資料蒐集與爬取")
+        # n = st.number_input(
+        #     "欲爬取的google搜尋結果頁數", 0, 1000, value=2)
+        # if st.checkbox("開始爬取"):
+        #     st.write('資料蒐集進行中...')
+        #     tic = time.perf_counter()
+        #     news = collect_data(event, n)
+        #     with open('./raw_news_{}.json'.format(event), 'w', encoding='utf-8') as fh:
+        #         json.dump(news, fh, ensure_ascii=False)
+        #     num = len(news)
+        #     toc = time.perf_counter()
+        #     st.success(
+        #         f"在{toc - tic:0.4f}秒後搜集了{num}筆可用的資料")
+        #     if num != 0:
+        #         source_dt = collect_target_news(news)
+        #         news_df = pd.DataFrame()
+        #         for k, v in news.items():
+        #             source_dt[k] = len(v)
+        #             for piece in v:
+        #                 try:
+        #                     row = pd.DataFrame(parse_content(
+        #                         k, piece), index=[0])
+        #                     news_df = pd.concat(
+        #                         [news_df, row], ignore_index=True, axis=0)
+        #                 except:
+        #                     continue
+        #         st.subheader("資料來源")
+        #         st.write(source_dt)
+        #         news_df.to_csv('output.csv', index=False, encoding="utf-8-sig")
+        #     else:
+        #         news_df = pd.read_csv("../scraper/filtered_data.csv")
+        #         st.write(news_df.source.value_counts())
+        #     # sentences = []
+        #     # for paragraph in news_df[news_df.paragraph.notnull()].paragraph.apply(lambda x: cut_sentences(x)):
+        #     #     sentences += paragraph
+        #     start_kw_extract = True
+        # # news_df = pd.read_csv("./output.csv")
+        # st.write(news_df)
 
-    # st.header("關鍵字萃取")
-    # if start_kw_extract:
-    #     selected_keywords = []
-    #     kw_tags = ['nouny', 'KNOWLEDGE', 'person']
-    #     full_text = ' '.join(news_df.paragraph.fillna(
-    #         "").to_list() + news_df.title.fillna("").to_list())
-    #     keywords = keyword_extract(full_text)
-    #     for kw in keywords:
-    #         found = False
-    #         for tag in kw_tags:
-    #             if tag in kw:
-    #                 found = True
-    #                 break
-    #         if found:
-    #             selected_keywords.append(kw[kw.find('>')+1:])
-
-    #     st.write(selected_keywords)
-    #     with open("./textrank_keywords.txt", 'w') as fh:
-    #         fh.writelines((kw + '\n' for kw in keywords))
-
-    #     with open("./selected_keywords.txt", 'w') as fh:
-    #         fh.writelines((kw + '\n' for kw in selected_keywords))
-    #     start_bg_search = True
-
-    # with open("./keywords.txt") as fh:
-    #     keywords = [line.strip() for line in fh.readlines()]
-    # with open("./selected_keywords.txt") as fh:
-    #     selected_keywords = [line.strip() for line in fh.readlines()]
+        # st.header("關鍵字萃取")
+        # if start_kw_extract:
+        #     full_text = ' '.join(news_df.paragraph.fillna(
+        #         "").to_list() + news_df.title.fillna("").to_list())
+        #     keywords = keyword_extract(kw_method, full_text)
+        #     st.write(keywords)
+        #     with open(f"./{kw_method}_keywords.txt", 'w') as fh:
+        #         fh.writelines((kw + '\n' for kw in keywords))
+        #     start_bg_search = True
 
     # st.header("背景資料")
     # if start_bg_search:

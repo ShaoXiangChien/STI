@@ -3,8 +3,11 @@ import pandas as pd
 import re
 import math
 
+
 def clean_df(df):
-    df.drop_duplicates(subset='title',inplace=True)
+    df.drop_duplicates(subset='title', inplace=True)
+    df['title'] = df['title'].astype(str)
+    df['paragraph'] = df['paragraph'].astype(str)
 
     for index, row in df.iterrows():
         row['paragraph'] = re.sub(row['title']+'\n', '', row['paragraph'])
@@ -17,7 +20,7 @@ def clean_df(df):
             udn_end2 = re.compile('（綜合報導）')
             udn_end3 = re.compile('贊助廣告')
             udn_news_info = re.compile('〔記者.+／.+報導〕')
-            udn_keep_reading=re.compile('...繼續閱讀')
+            udn_keep_reading = re.compile('...繼續閱讀')
 
             row['title'] = re.sub(udn_udn, '', row['title'])
             row['title'] = re.sub(udn_expert_eyes, '', row['title'])
@@ -37,7 +40,6 @@ def clean_df(df):
                 row['paragraph'] = row['paragraph'][:stop]
             row['paragraph'] = re.sub(udn_news_info, '', row['paragraph'])
             row['paragraph'] = re.sub(udn_keep_reading, '', row['paragraph'])
-            
 
         elif row['source'] == 'chinatimes.com':
             chinatimes_news_type = re.compile('.+》')
@@ -171,4 +173,3 @@ def clean_df(df):
         elif row['source'] == 'cna.com.tw':
             continue
     return df
-
