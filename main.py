@@ -170,7 +170,7 @@ if __name__ == '__main__':
                     if len(keywords) != 1:
                         map_score = keyword_map_eval(ans, keywords)
                         hits, precision = keyword_precision_eval(ans, keywords)
-                        with open(f"{st.session_state['event']}_{kw_method}_keywords.txt", 'w') as fh:
+                        with open(f"./Experiments/{st.session_state['event']}/{kw_method}_keywords.txt", 'w') as fh:
                             fh.writelines((kw + "\n" for kw in keywords))
 
                         st.write("Extraction complete")
@@ -179,7 +179,7 @@ if __name__ == '__main__':
                         st.write(f"Precision: {precision:.2f}")
                         st.write(f"Num of Hit: {hits}")
                         st.write(f"MAP Score: {map_score:.2f}")
-                        with open(f"{st.session_state['event']}_{kw_method}_scores.json", 'w') as fh:
+                        with open(f"./Experiments/{st.session_state['event']}/{kw_method}_scores.json", 'w') as fh:
                             json.dump({
                                 "precision": precision,
                                 "hit": hits,
