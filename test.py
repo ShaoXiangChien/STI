@@ -1,7 +1,9 @@
-from datetime import tzinfo
+from pprint import pprint
 import arrow
+import pandas as pd
+import re
+from clean_df import *
 
-date='2022/06/25 14:44'
-date=arrow.get(date).replace(tzinfo='local')
-date.format('YYYY/MM/DD HH:mm')
-print(date.format('YYYY/MM/DD HH:mm'))
+f=pd.read_csv('萊豬 output.csv',encoding='utf-8-sig')
+f=clean_df(f)
+f.to_csv('萊豬 cleaned.csv',encoding='utf-8-sig',index=False)

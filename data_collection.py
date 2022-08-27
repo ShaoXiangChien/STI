@@ -9,7 +9,7 @@ from serpapi import GoogleSearch
 from api_secrets import serpapi_key
 
 # result_type option: ['organic_results', 'news_results']
-def google_search_api(query, n, result_type='news_results', pagination=True):
+def google_search_api(query, n=100, result_type='news_results', pagination=True):
     pages = ['0', '10', '20'] if pagination else ['0']
     params = {
         "q": query,
@@ -162,9 +162,7 @@ def parse_content(source, piece):
     elif source == 'cna.com.tw':
         date_str = date_str.join(response.html.xpath(
             "//div[@class='updatetime']/span/text()"))
-        print(f'CNA before : {date_str}')
         date_str = date_str[:16]
-        print(f'after : {date_str}')
         # CNA時間格式：'YYYY/M/D HH:mm（M/D HH:mm 更新）'
         try:
             date_str = arrow.get(date_str).replace(tzinfo='local')
@@ -176,7 +174,6 @@ def parse_content(source, piece):
     elif source == 'news.yahoo.com':
         date_str = date_str.join(response.html.xpath(
             "//div[@class='caas-attr-time-style']/time/text()"))
-        print(f'before : {date_str}')
         temp = ''
         i = 0
         while i < len(date_str):
@@ -192,7 +189,6 @@ def parse_content(source, piece):
                 temp += date_str[i]
                 i += 1
         date_str = temp
-        print(f'after : {date_str}')
         try:
             date_str = arrow.get(
                 date_str, 'YYYY年M月D日 Ah:mm').replace(tzinfo='local')
@@ -218,7 +214,7 @@ def parse_content(source, piece):
 # 可用的target_sources:
 # target_sources = ['udn.com', 'chinatimes.com',
 #                        'news.tvbs.com', 'setn.com', 'ltn.com', 'appledaily.com', 'news.yahoo.com', 'storm.mg', 'cna.com.tw']
-def news_to_df(target_sources, event, n):
+def news_to_df(target_sources, event, n=100):
     result_df = google_search_api(event, n)
     news, num = collect_target_news(target_sources, result_df)
     if num != 0:
