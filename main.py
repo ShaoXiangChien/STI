@@ -3,6 +3,9 @@ from pprint import pprint
 import time
 import streamlit as st
 import json
+import trafilatura
+from trafilatura.settings import use_config
+from stqdm import stqdm
 
 # import self-defined modules
 from data_collection import *
@@ -18,7 +21,6 @@ start_tokenize = False
 start_kw_extract = False
 start_bg_search = False
 start_summary = False
-news_df = pd.DataFrame()
 event = ""
 
 
@@ -81,7 +83,7 @@ def cut_sentences(content):
 
 if __name__ == '__main__':
     st.title("時事圖文懶人包自動生成器")
-
+    newconfig = use_config("myfile.cfg")
     mode = st.selectbox("Select a mode", ["Experiment", "Live Demo"])
     if mode == "Experiment":
         stage = st.sidebar.selectbox("Select the task you want to perform", [
@@ -94,6 +96,7 @@ if __name__ == '__main__':
             if data_source == "Crawl Now":
                 if st.checkbox("開始爬取"):
                     st.write('資料蒐集進行中...')
+                    st.session_state['news_df'] = pd.DataFrame()
                     tic = time.perf_counter()
                     news = collect_data(event)
                     num = len(news)
@@ -103,28 +106,47 @@ if __name__ == '__main__':
                     if num != 0:
                         source_dt = collect_target_news(news)
                         for k, v in source_dt.items():
-                            source_dt[k] = len(v)
-                            for piece in v:
+                            st.write("Parsing content from " + k)
+                            for piece in stqdm(v):
+                                try:
+                                    print(piece)
+                                    content = trafilatura.fetch_url(
+                                        piece['link'])
+                                    extracted = trafilatura.extract(
+                                        content, config=newconfig) if content else []
+                                    article_contents = ''.join(
+                                        extracted) if extracted else ''
+                                    if article_contents != "":
+                                        print("Article extracted")
+                                    else:
+                                        print("Fail to extract article")
+                                    piece['article'] = article_contents
+                                except Exception as e:
+                                    print(e)
                                 try:
                                     row = pd.DataFrame(parse_content(
                                         k, piece), index=[0])
-                                    news_df = pd.concat(
-                                        [news_df, row], ignore_index=True, axis=0)
-                                except:
+                                    st.session_state['news_df'] = pd.concat(
+                                        [st.session_state['news_df'], row], ignore_index=True, axis=0)
+                                except Exception as e:
+                                    print(e)
                                     continue
+                            source_dt[k] = len(v)
+                        st.session_state['news_df'].to_csv(f"./Experiments/{st.session_state['event']}/news.csv", index=False,
+                                                           encoding="utf-8-sig")
                         st.subheader("資料來源")
                         st.write(source_dt)
-
-                        news_df = clean_df(news_df)
-                        news_df = Tokenization(news_df)
-                        news_df['full_text'] = news_df.apply(lambda x: str(
+                        st.session_state['news_df'] = clean_df(
+                            st.session_state['news_df'])
+                        st.session_state['news_df'] = Tokenization(
+                            st.session_state['news_df'])
+                        st.session_state['news_df']['full_text'] = st.session_state['news_df'].apply(lambda x: str(
                             x['title']) + " " + str(x['paragraph']), axis=1)
-                        news_df['full_text_tokens'] = news_df.apply(lambda x: str(
+                        st.session_state['news_df']['full_text_tokens'] = st.session_state['news_df'].apply(lambda x: str(
                             x['title_tokens']) + " " + str(x['paragraph_tokens']), axis=1)
-                        news_df.to_csv(f"./Experiments/{st.session_state['event']}/news.csv", index=False,
-                                       encoding="utf-8-sig")
-                        st.session_state['news_df'] = news_df
-                        st.write(news_df)
+                        st.session_state['news_df'].to_csv(f"./Experiments/{st.session_state['event']}/news.csv", index=False,
+                                                           encoding="utf-8-sig")
+                        st.write(st.session_state['news_df'])
             else:
                 uploaded_file = st.file_uploader("Choose a file")
                 if uploaded_file is not None:
@@ -146,7 +168,8 @@ if __name__ == '__main__':
                             news_df['full_text_tokens'] = news_df.apply(lambda x: str(
                                 x['title_tokens']) + " " + str(x['paragraph_tokens']), axis=1)
                         st.session_state['news_df'] = news_df
-                        news_df.to_csv(uploaded_file.name, index=False)
+                        st.session_state['news_df'].to_csv(
+                            uploaded_file.name, index=False)
                         st.write(news_df)
                 else:
                     st.warning("The uploaded file is empty")
@@ -166,7 +189,6 @@ if __name__ == '__main__':
                 if submitted:
                     st.write("Extracting")
                     keywords = keyword_extract(kw_method, news_df)
-                    st.write(keywords)
                     if len(keywords) != 1:
                         map_score = keyword_map_eval(ans, keywords)
                         hits, precision = keyword_precision_eval(ans, keywords)

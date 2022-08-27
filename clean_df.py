@@ -5,9 +5,9 @@ import math
 
 
 def clean_df(df):
-    df.drop_duplicates(subset='title', inplace=True)
     df['title'] = df['title'].astype(str)
     df['paragraph'] = df['paragraph'].astype(str)
+    df.drop_duplicates(subset='title', inplace=True)
 
     for index, row in df.iterrows():
         row['paragraph'] = re.sub(row['title']+'\n', '', row['paragraph'])
@@ -166,8 +166,11 @@ def clean_df(df):
                 time = storm_timestamp.search(row['paragraph']).group()
                 row['paragraph'] = re.sub(
                     storm_timestamp, '', row['paragraph'], 1)
-                if math.isnan(row['date']):
-                    row['date'] = time
+                try:
+                    if math.isnan(float(row['date'])):
+                        row['date'] = time
+                except:
+                    pass
             row['paragraph'] = re.sub(storm_pict, '', row['paragraph'])
 
         elif row['source'] == 'cna.com.tw':
