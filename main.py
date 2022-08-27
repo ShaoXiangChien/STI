@@ -121,7 +121,7 @@ if __name__ == '__main__':
                             x['title']) + " " + str(x['paragraph']), axis=1)
                         news_df['full_text_tokens'] = news_df.apply(lambda x: str(
                             x['title_tokens']) + " " + str(x['paragraph_tokens']), axis=1)
-                        news_df.to_csv(f'./Experiments/{st.session_state['event']}_news.csv', index=False,
+                        news_df.to_csv(f"./Experiments/{st.session_state['event']}_news.csv", index=False,
                                        encoding="utf-8-sig")
                         st.session_state['news_df'] = news_df
                         st.write(news_df)
