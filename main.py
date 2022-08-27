@@ -102,7 +102,7 @@ if __name__ == '__main__':
                         f"在{toc - tic:0.4f}秒後搜集了{num}筆可用的資料")
                     if num != 0:
                         source_dt = collect_target_news(news)
-                        for k, v in news.items():
+                        for k, v in source_dt.items():
                             source_dt[k] = len(v)
                             for piece in v:
                                 try:
@@ -121,7 +121,7 @@ if __name__ == '__main__':
                             x['title']) + " " + str(x['paragraph']), axis=1)
                         news_df['full_text_tokens'] = news_df.apply(lambda x: str(
                             x['title_tokens']) + " " + str(x['paragraph_tokens']), axis=1)
-                        news_df.to_csv(f"./Experiments/{st.session_state['event']}_news.csv", index=False,
+                        news_df.to_csv(f"./Experiments/{st.session_state['event']}/news.csv", index=False,
                                        encoding="utf-8-sig")
                         st.session_state['news_df'] = news_df
                         st.write(news_df)
