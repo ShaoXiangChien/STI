@@ -80,10 +80,6 @@ def parse_content(source, piece):
     link = piece['link']
     response = get_source(link)
     date_str = ''
-    article_contents = ''
-    content = trafilatura.fetch_url(link)
-    extracted = trafilatura.extract(content) if content else []
-    article_contents = ''.join(extracted) if extracted else ''
 
     if source == 'udn.com':
         # 'udn.com'會抓到經濟日報、轉角國際，但是其xpath與聯合報不同，需進行區分
@@ -195,7 +191,7 @@ def parse_content(source, piece):
         response.html.xpath(
             "//div[@class='metadata__DateSection-sc-1c3910m-3 gimsRe']/text()")
 
-    return {'title': piece['title'], 'date': date_str.format('YYYY/MM/DD HH:mm'), 'paragraph': article_contents, 'source': source}
+    return {'title': piece['title'], 'date': date_str.format('YYYY/MM/DD HH:mm'), 'paragraph': piece['article'], 'source': source}
 
 # 這個Fuction指定target_sources、要爬的事件、筆數(會與結果不同，因為會用target_sources篩選)之後可以直接生成df
 # 可用的target_sources:
