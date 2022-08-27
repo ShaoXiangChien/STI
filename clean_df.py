@@ -4,7 +4,7 @@ import re
 import math
 
 
-def clean_df(df):
+def clean_df(df: pd.DataFrame):
     df.drop_duplicates(subset='title', inplace=True)
     df['title'] = df['title'].astype(str)
     df['paragraph'] = df['paragraph'].astype(str)
@@ -172,4 +172,5 @@ def clean_df(df):
 
         elif row['source'] == 'cna.com.tw':
             continue
+    df = df.dropna(subset=['paragraph'])
     return df
