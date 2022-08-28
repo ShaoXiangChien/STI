@@ -169,7 +169,7 @@ if __name__ == '__main__':
                                 x['title_tokens']) + " " + str(x['paragraph_tokens']), axis=1)
                         st.session_state['news_df'] = news_df
                         st.session_state['news_df'].to_csv(
-                            uploaded_file.name, index=False)
+                            f"./Experiments/{st.session_state['event']}/news.csv", index=False)
                         st.write(news_df)
                 else:
                     st.warning("The uploaded file is empty")
