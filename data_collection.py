@@ -9,7 +9,9 @@ from serpapi import GoogleSearch
 from api_secrets import serpapi_key
 
 # result_type option: ['organic_results', 'news_results']
-def google_search_api(query, n=100, result_type='news_results', pagination=True):
+
+
+def collect_data(query, n=100, result_type='news_results', pagination=True):
     pages = ['0', '10', '20'] if pagination else ['0']
     params = {
         "q": query,
@@ -197,6 +199,8 @@ def parse_content(source, piece):
 # 可用的target_sources:
 # target_sources = ['udn.com', 'chinatimes.com',
 #                        'news.tvbs.com', 'setn.com', 'ltn.com', 'appledaily.com', 'news.yahoo.com', 'storm.mg', 'cna.com.tw']
+
+
 def news_to_df(target_sources, event, n=100):
     result_df = google_search_api(event, n)
     news, num = collect_target_news(target_sources, result_df)
