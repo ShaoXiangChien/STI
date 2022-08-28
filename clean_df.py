@@ -175,4 +175,5 @@ def clean_df(df):
 
         elif row['source'] == 'cna.com.tw':
             continue
+    df = df.dropna(subset=['paragraph'])
     return df
