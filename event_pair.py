@@ -9,6 +9,46 @@ df = pd.read_csv('萊豬 output.csv', encoding='utf-8-sig')
 
 result = clean_df(df)
 
+def chineses_to_num(input: str):
+    translate_table = {
+        '零': 0,
+        '一': 1,
+        '二': 2,
+        '三': 3,
+        '四': 4,
+        '五': 5,
+        '六': 6,
+        '七': 7,
+        '八': 8,
+        '九': 9,
+        '十': 10
+    }
+    print
+    # 結果
+    result_str = ''
+    #暫存數字
+    tmp_num=0
+    idx = 0
+    while idx < len(input):
+        if translate_table.get(input[idx]) is not None:
+            current_word = translate_table.get(input[idx])
+            if current_word == 10:
+                if tmp_num == 0:
+                    tmp_num = 1
+                if translate_table.get(input[idx+1]) is None:
+                    tmp_num*=10
+            else:
+                tmp_num=tmp_num*10+current_word
+
+        else:
+            if tmp_num != 0:
+                result_str += str(tmp_num)
+                tmp_num = 0
+            result_str += input[idx]
+        idx += 1
+    if tmp_num != 0:
+        result_str += str(tmp_num)
+    return result_str
 
 def cut_sentences(content):
     end_flag = ['?', '!', '？', '！', '。', '…', '；']
@@ -32,7 +72,17 @@ def cut_sentences(content):
 
     return sentences
 
-
+timestamp=re.compile(
+    '[一,二,三,四,五,六,七,八,九,零]{4}年十?[一,二,三,四,五,六,七,八,九]?月?[二,三]?十?[一,二,三,四,五,六,七,八,九]?[日,號]?|'
+    '十?[一,二,三,四,五,六,七,八,九]月[二,三]?十?[一,二,三,四,五,六,七,八,九]?[日,號]?|'
+    '[二,三]?[一,二,三,四,五,六,七,八,九,十][一,二,三,四,五,六,七,八,九]?[日,號]'
+    '\d{4}年[一,二,三,四,五,六,七,八,九,十][一,二]?月?[二,三]?十?[一,二,三,四,五,六,七,八,九]?[日,號]?|'
+    '\d{4}年\d{0,2}月?\d{0,2}[日,號]?|'
+    '\d{1,2}月\d{0,2}[日,號]?|'
+    '(?<!\d)\d{1,2}[日,號]|'
+    '[^至,迄]今[^年]|'
+    '昨|今年\d{0,2}月?\d{0,2}[日,號]?|'
+    '去年\d{0,2}月?\d{0,2}[日,號]?')
 timestamp_list = ['']
 events_list = pd.DataFrame()
 for index, row in df.iterrows():
