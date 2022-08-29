@@ -162,6 +162,9 @@ if __name__ == '__main__':
                             news_df = clean_df(news_df)
 
                         if tokenization_required:
+                            news_df['title'] = news_df['title'].astype(str)
+                            news_df['paragraph'] = news_df['paragraph'].astype(
+                                str)
                             news_df = Tokenization(news_df)
                             news_df['full_text'] = news_df.apply(lambda x: str(
                                 x['title']) + " " + str(x['paragraph']), axis=1)
@@ -189,11 +192,11 @@ if __name__ == '__main__':
                 if submitted:
                     st.write("Extracting")
                     keywords = keyword_extract(kw_method, news_df)
+                    with open(f"./Experiments/{st.session_state['event']}/{kw_method}_keywords.txt", 'w') as fh:
+                        fh.writelines((kw + "\n" for kw in keywords))
                     if len(keywords) != 1:
                         map_score = keyword_map_eval(ans, keywords)
                         hits, precision = keyword_precision_eval(ans, keywords)
-                        with open(f"./Experiments/{st.session_state['event']}/{kw_method}_keywords.txt", 'w') as fh:
-                            fh.writelines((kw + "\n" for kw in keywords))
 
                         st.write("Extraction complete")
                         st.write(f"Expected Output: {' '.join(ans)}")

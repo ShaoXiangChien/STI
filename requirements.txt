@@ -7,3 +7,4 @@ tensorflow==1.13.1
 ckiptagger
 openai
 azure-ai-textanalytics
+azure-ai-anomalydetector
