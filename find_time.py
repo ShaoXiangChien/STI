@@ -4,6 +4,7 @@ import pandas as pd
 from clean_df import *
 import arrow
 
+
 def chineses_to_num(input: str):
     translate_table = {
         '零': 0,
@@ -78,6 +79,7 @@ def cut_sentences(content):
 # 2.有些非日期容易被讀取進來 Ex:3號出口、釋字第17號
 # 3.若是句中重複出現'今'之類的關鍵字，會導致一段句子被重複讀取多次時間
 
+
 def find_time(df: pd.DataFrame):
     timestamp = re.compile(
         '今\(\d+[日,號]\)|'
@@ -93,7 +95,7 @@ def find_time(df: pd.DataFrame):
         '(?<!\d)\d{1,2}[日,號]|'
         '今年\d{0,2}月?\d{0,2}[日,號]?|'
         '去年\d{0,2}月?\d{0,2}[日,號]?')
-    
+
     events_list = pd.DataFrame()
     for index, row in df.iterrows():
         try:
@@ -109,8 +111,8 @@ def find_time(df: pd.DataFrame):
                 time = ''
                 tmp_event = ''
                 for idx, t in enumerate(time_list):
-                    t=t.replace('(','\(')
-                    t=t.replace(')','\)')
+                    t = t.replace('(', '\(')
+                    t = t.replace(')', '\)')
                     end = 0
                     if idx > 0:
                         try:
@@ -134,8 +136,8 @@ def find_time(df: pd.DataFrame):
                     tmp_event = sentence[end +
                                          1:next_start] if sentence[end] == '，' or sentence[end] == '、' else sentence[end:next_start]
                     sentence = sentence[next_start:]
-                    t=t.replace('\(','(')
-                    t=t.replace('\)',')')
+                    t = t.replace('\(', '(')
+                    t = t.replace('\)', ')')
                     time = chineses_to_num(t)
                     if re.match('\d+月\d*[日,號]?', time):
                         time = publish_time.format(
@@ -169,3 +171,19 @@ def find_time(df: pd.DataFrame):
                     [events_list, pd.DataFrame({'Time': time, 'Event': event, 'Source': index+2}, index=[0])], ignore_index=True)
 
     return events_list
+
+
+def time_transform(s: str):
+    time_patterns = [
+        "YYYY年M月D日",
+        "YYYY年",
+        "YYYY年M月"
+    ]
+    arrow_time = None
+    for pat in time_patterns:
+        try:
+            arrow_time = arrow.get(s, pat)
+        except:
+            continue
+        break
+    return arrow_time
