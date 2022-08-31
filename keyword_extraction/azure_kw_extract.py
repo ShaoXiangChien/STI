@@ -3,6 +3,7 @@ from azure.ai.textanalytics import (
     TextAnalyticsClient,
     ExtractSummaryAction
 )
+import random
 key = "4d9491464469449187508862d7ae45c3"
 endpoint = "https://languageserviceforsti.cognitiveservices.azure.com/"
 
@@ -23,7 +24,9 @@ client = authenticate_client()
 
 def azure_kw_extract(df):
     global client
-    documents = df['full_text'].to_list()[:10]
+    n = df.shape[0]
+    start = random.randint(0, n - 11)
+    documents = df['full_text'].to_list()[start: start + 10]
     response = client.extract_key_phrases(documents, language="zh")
     result = [doc for doc in response if not doc.is_error]
     return result[0].key_phrases[:20]

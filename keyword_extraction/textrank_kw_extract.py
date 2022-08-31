@@ -13,4 +13,4 @@ def textrank_kw_extract(df):
     text = "".join(df.title.to_list() + df.paragraph.to_list())
     result = articut.parse(text)
     kw_result = articut.analyse.textrank(result)
-    return [kw[kw.find(">") + 1:] for kw in kw_result]
+    return [kw[kw.find(">") + 1:] for kw in kw_result] if kw_result else ['']
