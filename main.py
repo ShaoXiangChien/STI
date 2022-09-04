@@ -224,7 +224,9 @@ if __name__ == '__main__':
                 with open(f"./Experiments/{st.session_state['event']}_{sm_method}_summary.txt", "w") as fh:
                     fh.write(summary)
         else:
-            pass
+            time_df, fig, anomalies = detect_anomaly_from_df(
+                st.session_state['news_df'], 90)
+            time_df.to_csv(f"./Experiments/{event}/time_df.csv", index=False)
 
     elif mode == "Live Demo":
         pass
