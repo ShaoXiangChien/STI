@@ -3,6 +3,7 @@ from unicodedata import numeric
 import pandas as pd
 from clean_df import *
 import arrow
+from anomaly_detection import *
 
 
 def chineses_to_num(input: str):
@@ -173,7 +174,7 @@ def find_time(df: pd.DataFrame):
     return events_list
 
 
-def time_transform(s: str):
+def str_to_time(s: str):
     time_patterns = [
         "YYYY年M月D日",
         "YYYY年",
@@ -186,4 +187,7 @@ def time_transform(s: str):
         except:
             continue
         break
-    return arrow_time
+    if arrow_time:
+        return arrow_time.format("YYYY-MM-DD") + "T00:00:00Z"
+    else:
+        return ""

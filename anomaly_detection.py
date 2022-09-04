@@ -11,6 +11,7 @@ from azure.ai.anomalydetector.models import DetectRequest, TimeSeriesPoint, Time
 from azure.core.credentials import AzureKeyCredential
 import plotly.express as px
 import plotly.graph_objects as go
+from find_time import *
 
 
 subscription_key = 'a2653cad6bdd4efaabf530b50d8efeca'
@@ -54,7 +55,7 @@ def detect_anomaly_last(sample_data, sensitivity, skip_point=29):
 
 
 def build_figure(df):
-    anomaly = df[df['isNegativeAnomaly'] == True]
+    anomaly = df[df['isAnomaly']]
     fig = go.Figure()
 
     fig.add_trace(go.Scatter(x=df['timestamp'], y=df['value'],
@@ -63,3 +64,27 @@ def build_figure(df):
     fig.add_trace(go.Scatter(
         x=anomaly['timestamp'], y=anomaly['value'], mode="markers"))
     return fig
+
+
+def detect_anomaly_from_df(df, sensitivity=95):
+    time_df = find_time(df)
+    ft = time_df['Time'].apply(lambda x: len(x) > 10)
+    time_df = time_df[ft]
+    time_df['timestamp'] = time_df['Time'].apply(lambda x: str_to_time(str(x)))
+    time_dt = time_df['timestamp'].value_counts().sort_index().to_dict()
+    del time_dt['']
+    sample_data = {
+        "granularity": "daily",
+        "series": [
+            {
+                "timestamp": k,
+                "value": v
+            }
+            for k, v in time_dt.items()
+        ]
+    }
+    res = detect_anomaly_last(sample_data, sensitivity)
+    df = pd.concat([pd.DataFrame(sample_data['series']), res],
+                   axis=1, join="inner")
+    fig = build_figure(df.iloc[30:])
+    return fig, df[df['isAnomaly']].timestamp.to_list()
