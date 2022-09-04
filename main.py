@@ -13,6 +13,7 @@ from articut import *
 from crawl_wiki import *
 from clean_df import *
 from metrics import *
+from anomaly_detection import *
 
 KW_METHODS = ['tfidf', 'textrank',
               'azure language service', 'ckip', 'ckip_tfidf', 'openai']
@@ -87,7 +88,7 @@ if __name__ == '__main__':
     mode = st.selectbox("Select a mode", ["Experiment", "Live Demo"])
     if mode == "Experiment":
         stage = st.sidebar.selectbox("Select the task you want to perform", [
-                                     "Data Collection", "Keyword Extraction", "Summarization"])
+                                     "Data Collection", "Keyword Extraction", "Summarization", "Timeline Generation"])
         if stage == "Data Collection":
             event = st.text_input("請輸入您想搜尋的事件", "萊豬")
             st.session_state['event'] = event
@@ -212,16 +213,18 @@ if __name__ == '__main__':
                             }, fh)
                     else:
                         st.write(f"Extracted Keywords: {keywords}")
-        else:
+        elif stage == "Summarization":
             st.header("摘要方法測試")
-            if news_df.shape[0] == 0:
+            if st.session_state['news_df'].shape[0] == 0:
                 st.warning("news_df is empty, please collect data first.")
             else:
                 sm_method = st.selectbox("Select a method", SM_METHODS)
-                summary = summarize(sm_method, news_df)
+                summary = summarize(sm_method, st.sessionif st.session_state['news_df'])
                 st.write(summary)
                 with open(f"./Experiments/{st.session_state['event']}_{sm_method}_summary.txt", "w") as fh:
                     fh.write(summary)
+        else:
+            pass
 
     elif mode == "Live Demo":
         pass
