@@ -87,4 +87,4 @@ def detect_anomaly_from_df(df, sensitivity=95):
     df = pd.concat([pd.DataFrame(sample_data['series']), res],
                    axis=1, join="inner")
     fig = build_figure(df.iloc[30:])
-    return fig, df[df['isAnomaly']].timestamp.to_list()
+    return time_df, fig, df[df['isAnomaly']].timestamp.to_list()
