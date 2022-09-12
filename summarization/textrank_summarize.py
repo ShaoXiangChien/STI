@@ -13,9 +13,9 @@ embed = hub.load(
 
 # @st.experimental_memo(suppress_st_warning=True)
 def textrank_summarize(sentences, word_limit=200):
-    result = [sentences[0]]
-    sentences.pop(0)
-    word_limit -= len(result[0])
+    # result = [sentences[0]]
+    # sentences.pop(0)
+    # word_limit -= len(result[0])
     embeddings = embed(sentences)
     # generate cosine similarity matrix
     sim_matrix = cosine_similarity(embeddings)

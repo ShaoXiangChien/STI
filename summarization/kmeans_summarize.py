@@ -33,9 +33,6 @@ def cut_sentences(content):
 
 
 def kmeans_summarize(sentences, number_of_clusters=0, word_limit=200):
-    result = [sentences[0]]
-    sentences.pop(0)
-    word_limit -= len(result[0])
     if number_of_clusters <= 0:
         number_of_clusters = int(np.ceil(len(sentences)**0.6))
     sentence_embeddings = model.encode(sentences)
