@@ -6,6 +6,7 @@ import json
 import trafilatura
 from trafilatura.settings import use_config
 from stqdm import stqdm
+import random
 
 # import self-defined modules
 from data_collection import *
@@ -14,12 +15,13 @@ from crawl_wiki import *
 from clean_df import *
 from metrics import *
 from anomaly_detection import *
-from berTopic_service import *
+# from berTopic_service import *
 from find_time import *
 
 KW_METHODS = ['tfidf', 'textrank',
               'azure language service', 'ckip', 'ckip_tfidf', 'openai']
-SM_METHODS = ['naive', 'kmeans', 'textrank', 'openai']
+SM_METHODS = ['naive', 'kmeans', 'textrank',
+              'openai', "azure_language_service"]
 start_tokenize = False
 start_kw_extract = False
 start_bg_search = False
@@ -61,7 +63,8 @@ def summarize(method, df):
         summary = sm.naive_summarize(sentences, tokenized_sentences)
     elif method == "kmeans":
         import summarization.kmeans_summarize as sm
-        sentences = cut_sentences("".join(df['full_text_tokens'].to_list()))
+        sentences = cut_sentences("".join(random.choices(
+            df['full_text_tokens'].to_list(), k=int(len(df['full_text_tokens'].to_list()) * 0.3))))
         summary = sm.kmeans_summarize(sentences)
     elif method == "textrank":
         import summarization.textrank_summarize as sm
@@ -69,8 +72,13 @@ def summarize(method, df):
         summary = sm.textrank_summarize(sentences)
     elif method == "openai":
         import openai_services as sm
-        docs = "".join(df['full_text'].to_list())
+        docs = "".join(random.choices(
+            df['full_text'].to_list(), k=10))[:1500]
         summary = sm.summarize(docs)
+    elif method == "azure_language_service":
+        import summarization.azure_summarize as sm
+        docs = "".join(df['full_text'].to_list())[:100000]
+        summary = sm.azure_summarize([docs])
     return summary
 
 
@@ -121,7 +129,7 @@ if __name__ == '__main__':
     mode = st.selectbox("Select a mode", ["Experiment", "Live Demo"])
     if mode == "Experiment":
         stage = st.sidebar.selectbox("Select the task you want to perform", [
-                                     "Data Collection", "Keyword Extraction", "Summarization", "Timeline Generation"])
+            "Data Collection", "Keyword Extraction", "Summarization", "Timeline Generation"])
         if stage == "Data Collection":
             event = st.text_input("請輸入您想搜尋的事件", "萊豬")
             st.session_state['event'] = event
@@ -260,10 +268,10 @@ if __name__ == '__main__':
                     summary = summarize(
                         sm_method, st.session_state['news_df'] if st.session_state['news_df'].shape[0] != 0 else "")
                     st.write(summary)
-                    f1_score = summary_f1_eval(summary, ans)
-                    st.write(f"f1 score: {f1_score}\n")
-                    summary = f"f1 score: {f1_score}\n" + summary
-                    with open(f"./Experiments/{event}/{sm_method}_summary.txt", "w") as fh:
+                    # f1_score = summary_f1_eval(summary, ans)
+                    # st.write(f"f1 score: {f1_score}\n")
+                    # summary = f"f1 score: {f1_score}\n" + summary
+                    with open(f"./Experiments/{st.session_state['event']}/{sm_method}_summary.txt", "w") as fh:
                         fh.write(summary)
         else:
             time_df = find_time(st.session_state['news_df'])
