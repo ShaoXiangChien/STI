@@ -14,6 +14,8 @@ from crawl_wiki import *
 from clean_df import *
 from metrics import *
 from anomaly_detection import *
+from berTopic_service import *
+from find_time import *
 
 KW_METHODS = ['tfidf', 'textrank',
               'azure language service', 'ckip', 'ckip_tfidf', 'openai']
@@ -80,6 +82,25 @@ def cut_sentences(content):
                 tmp_char = ''
 
     return sentences
+
+
+def choose_timeline_rp(df, kws):
+    n = df['cluster'].max()
+    timeline_rp = {i: "" for i in range(n)}
+    for i in range(n):
+        candidate = df[df['cluster'] == i].copy()
+        max_score = 0
+        target = ""
+        for doc in candidate['Event']:
+            score = 0
+            for w in kws[i]:
+                if w in doc:
+                    score += 1
+            if score > max_score:
+                max_score = score
+                target = doc
+        timeline_rp[i] = target
+    return timeline_rp
 
 
 if __name__ == '__main__':
@@ -219,14 +240,28 @@ if __name__ == '__main__':
                 st.warning("news_df is empty, please collect data first.")
             else:
                 sm_method = st.selectbox("Select a method", SM_METHODS)
-                summary = summarize(sm_method, st.sessionif st.session_state['news_df'])
+                summary = summarize(sm_method, st.session_state['news_df'])
                 st.write(summary)
                 with open(f"./Experiments/{st.session_state['event']}_{sm_method}_summary.txt", "w") as fh:
                     fh.write(summary)
         else:
-            time_df, fig, anomalies = detect_anomaly_from_df(
-                st.session_state['news_df'], 90)
-            time_df.to_csv(f"./Experiments/{event}/time_df.csv", index=False)
+            time_df = find_time(st.session_state['news_df'])
+            ft = time_df['Time'].apply(lambda x: len(x) > 10)
+            time_df = time_df[ft]
+            time_df['timestamp'] = time_df['Time'].apply(
+                lambda x: str_to_time(str(x)))
+            time_df.to_csv(
+                f"./Experiments/{event}/time_df.csv", index=False)
+            grouping_method = st.selectbox(
+                "Choose a method", ["Anomaly Detector", "BerTopic"])
+            if grouping_method == "Anomaly Detector":
+                fig, anomalies = detect_anomaly_from_df(
+                    time_df, 90)
+                anomaly_df = time_df[time_df['timestamp'] in anomalies].copy()
+
+            elif grouping_method == "BerTopic":
+                topics, topic_kws = topic_modeling(time_df['Event'].to_list())
+                time_df['topic'] = topics
 
     elif mode == "Live Demo":
         pass
