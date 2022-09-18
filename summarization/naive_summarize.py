@@ -9,26 +9,20 @@ username = "loveyoosic4ever@gmail.com"
 apikey = "=Zs6wI!L_KRO&_Ff3H5VQx3Fx145A%v"
 articut = Articut(username, apikey)
 
+# require original sentences and tokenized ones
 
-def naive_summarize(sentences, word_limit=200):
-    result = [sentences[0]]
-    sentences.pop(0)
-    word_limit -= len(result[0])
-    tokenized_sentences = []
-    for sentence in sentences:
-        try:
-            tokens = str(articut.parse(sentence).get(
-                "result_segmentation")).split("/")
-        except:
-            tokens = ['']
-        tokenized_sentences.append(tokens)
+
+def naive_summarize(sentences, tokenized_sentences, word_limit=200):
     full_text = [word for sentence in tokenized_sentences for word in sentence]
     freq_table = dict(Counter(full_text))
 
     # value sentence score
     sentence_value = {}
-
+    n = len(tokenized_sentences)
     for idx, sentence in enumerate(sentences):
+        if idx > n - 1:
+            continue
+
         word_count_in_sentence = len(tokenized_sentences[idx])
 
         for valueWord in freq_table:
@@ -58,7 +52,7 @@ def naive_summarize(sentences, word_limit=200):
             sentence_count += 1
 
     summary = re.sub('\n', '', summary)
-    result += summary.split(' ')
+    result = summary.split(' ')
     word_count = 0
     sentence_count = len(result)
     for idx, res in enumerate(result):

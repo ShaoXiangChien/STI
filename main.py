@@ -52,14 +52,26 @@ def keyword_extract(method, df):
 
 def summarize(method, df):
     st.write("Initializing")
+    summary = ""
     if method == "naive":
         import summarization.naive_summarize as sm
+        sentences = cut_sentences("".join(df['full_text'].to_list()))
+        tokenized_sentences = cut_sentences(
+            " ".join(df['full_text_tokens'].to_list()))
+        summary = sm.naive_summarize(sentences, tokenized_sentences)
     elif method == "kmeans":
         import summarization.kmeans_summarize as sm
+        sentences = cut_sentences("".join(df['full_text_tokens'].to_list()))
+        summary = sm.kmeans_summarize(sentences)
     elif method == "textrank":
         import summarization.textrank_summarize as sm
+        sentences = cut_sentences("".join(df['full_text_tokens'].to_list()))
+        summary = sm.textrank_summarize(sentences)
     elif method == "openai":
         import openai_services as sm
+        docs = "".join(df['full_text'].to_list())
+        summary = sm.summarize(docs)
+    return summary
 
 
 def cut_sentences(content):
@@ -239,11 +251,20 @@ if __name__ == '__main__':
             if st.session_state['news_df'].shape[0] == 0:
                 st.warning("news_df is empty, please collect data first.")
             else:
-                sm_method = st.selectbox("Select a method", SM_METHODS)
-                summary = summarize(sm_method, st.session_state['news_df'])
-                st.write(summary)
-                with open(f"./Experiments/{st.session_state['event']}_{sm_method}_summary.txt", "w") as fh:
-                    fh.write(summary)
+                with st.form("summary_form"):
+                    ans = st.text_area("輸入標準答案")
+                    sm_method = st.selectbox("Select a method", SM_METHODS)
+                    submit = st.form_submit_button("Submit")
+
+                if submit:
+                    summary = summarize(
+                        sm_method, st.session_state['news_df'] if st.session_state['news_df'].shape[0] != 0 else "")
+                    st.write(summary)
+                    f1_score = summary_f1_eval(summary, ans)
+                    st.write(f"f1 score: {f1_score}\n")
+                    summary = f"f1 score: {f1_score}\n" + summary
+                    with open(f"./Experiments/{event}/{sm_method}_summary.txt", "w") as fh:
+                        fh.write(summary)
         else:
             time_df = find_time(st.session_state['news_df'])
             ft = time_df['Time'].apply(lambda x: len(x) > 10)
