@@ -266,11 +266,12 @@ if __name__ == '__main__':
 
                 if submit:
                     summary = summarize(
-                        sm_method, st.session_state['news_df'] if st.session_state['news_df'].shape[0] != 0 else "")
+                        sm_method, st.session_state['news_df'] if st.session_state['news_df'].shape[0] != 0 else "").replace("\n", "").replace(" ", "")
                     st.write(summary)
-                    # f1_score = summary_f1_eval(summary, ans)
-                    # st.write(f"f1 score: {f1_score}\n")
-                    # summary = f"f1 score: {f1_score}\n" + summary
+                    f1_score = summary_f1_eval(
+                        summary, ans.replace("\n", "").replace(" ", ""))
+                    st.write(f"f1 score: {f1_score}\n")
+                    summary = f"f1 score: {f1_score}\n" + summary
                     with open(f"./Experiments/{st.session_state['event']}/{sm_method}_summary.txt", "w") as fh:
                         fh.write(summary)
         else:
