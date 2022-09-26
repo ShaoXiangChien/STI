@@ -82,29 +82,48 @@ def cut_sentences(content):
 
 
 def find_time(df: pd.DataFrame, tokenized=False):
-    timestamp = re.compile(
-        '今\(\d+[日,號]\)|'
-        '昨\(\d+[日,號]\)|'
-        '[^至,迄]今[^年,\()]|'
-        '昨[^\(]|'
-        '[一,二,三,四,五,六,七,八,九,零,○]{4}年十?[一,二,三,四,五,六,七,八,九]?月?[二,三]?[一,二,三,四,五,六,七,八,九,十]?[一,二,三,四,五,六,七,八,九]?[日,號]?|'
-        '十?[一,二,三,四,五,六,七,八,九]月[二,三]?[一,二,三,四,五,六,七,八,九,十]?[一,二,三,四,五,六,七,八,九]?[日,號]?|'
-        '[二,三]?[一,二,三,四,五,六,七,八,九,十][一,二,三,四,五,六,七,八,九]?[日,號]'
-        '民國\d{1,3}年\d{0,2}月?\d{0,2}[日,號]?|'
-        '\d{3,4}年\d{0,2}月?\d{0,2}[日,號]?|'
-        '\d{1,2}月\d{0,2}[日,號]?|'
-        '(?<!\d)\d{1,2}[日,號]|'
-        '今年\d{0,2}月?\d{0,2}[日,號]?|'
-        '去年\d{0,2}月?\d{0,2}[日,號]?')
-
     events_list = pd.DataFrame()
+    if tokenized==False:
+        timestamp = re.compile(
+            '今[\(,（]\d+[日,號][\),）]|'
+            '昨[\(,（]\d+[日,號][\),）]|'
+            '[^至,迄]今[^年,\(,（]|'
+            '昨[^\(（,]|'
+            '[一,二,三,四,五,六,七,八,九,零,○]{4}年十?[一,二,三,四,五,六,七,八,九]?月?[二,三]?[一,二,三,四,五,六,七,八,九,十]?[一,二,三,四,五,六,七,八,九]?[日,號]?|'
+            '十?[一,二,三,四,五,六,七,八,九]月[二,三]?[一,二,三,四,五,六,七,八,九,十]?[一,二,三,四,五,六,七,八,九]?[日,號]?|'
+            '[二,三]?[一,二,三,四,五,六,七,八,九,十][一,二,三,四,五,六,七,八,九]?[日,號]'
+            '民國\d{1,3}年\d{0,2}月?\d{0,2}[日,號]?|'
+            '\d{3,4}年\d{0,2}月?\d{0,2}[日,號]?|'
+            '\d{1,2}月\d{0,2}[日,號]?|'
+            '(?<!\d)\d{1,2}[日,號]|'
+            '今年\d{0,2}月?\d{0,2}[日,號]?|'
+            '去年\d{0,2}月?\d{0,2}[日,號]?')
+    else:
+        timestamp = re.compile(
+            '今 [\(,（] \d+[日,號] [\),）]|'
+            '昨 [\(,（] \d+[日,號] [\),）]|'
+            '[^至,迄]今[^年,\(,（][^\(,（]|'
+            '昨[^\(,（][^\(,（]|'
+            '[一,二,三,四,五,六,七,八,九,零,○]{4}年 ?十?[一,二,三,四,五,六,七,八,九]?月? ?[二,三]?[一,二,三,四,五,六,七,八,九,十]?[一,二,三,四,五,六,七,八,九]?[日,號]?|'
+            '十?[一,二,三,四,五,六,七,八,九]月 ?[二,三]?[一,二,三,四,五,六,七,八,九,十]?[一,二,三,四,五,六,七,八,九]?[日,號]?|'
+            '[二,三]?[一,二,三,四,五,六,七,八,九,十][一,二,三,四,五,六,七,八,九]?[日,號]'
+            '民國 \d{1,3}年 ?\d{0,2}月? ?\d{0,2}[日,號]?|'
+            '\d{3,4}年 ?\d{0,2}月? ?\d{0,2}[日,號]?|'
+            '\d{1,2}月 ?\d{0,2}[日,號]?|'
+            '(?<!\d)\d{1,2}[日,號]|'
+            '今年 \d{0,2}月? ?\d{0,2}[日,號]?|'
+            '去年 \d{0,2}月? ?\d{0,2}[日,號]?')
+    
     for index, row in df.iterrows():
         try:
             publish_time = arrow.get(row['date'])
         except:
             publish_time = arrow.now()
 
-        sentences = cut_sentences(str(row['paragraph']))
+        if tokenized==False:
+            sentences = cut_sentences(str(row['paragraph']))
+        else:
+            sentences = cut_sentences(str(row['paragraph_tokens']))
 
         for sentence in sentences:
             time_list = timestamp.findall(sentence)
@@ -140,15 +159,16 @@ def find_time(df: pd.DataFrame, tokenized=False):
                     t = t.replace('\(', '(')
                     t = t.replace('\)', ')')
                     time = chineses_to_num(t)
+                    time = time.replace(' ','')
                     if re.match('\d+月\d*[日,號]?', time):
                         time = publish_time.format(
                             'YYYY年') + re.match('\d+月\d*[日,號]?', time).group()
                     elif re.match('\d+[日,號]', time):
                         time = publish_time.format(
                             'YYYY年MM月') + re.match('\d+[日,號]', time).group()
-                    elif re.match('今\(\d+[日,號]\)', time) or re.match('[^至,迄]今[^年]', time):
+                    elif re.match('今[\(,（]\d+[日,號][\),）]', time) or re.match('[^至,迄]?今[^年,\(,（]?', time):
                         time = publish_time.format('YYYY年MM月DD日')
-                    elif re.match('昨\(\d+[日,號]\)', time) or re.match('昨[^\(]', time):
+                    elif re.match('昨[\(,（]\d+[日,號][\),）]', time) or re.match('昨[^\(（,]?', time):
                         time = publish_time.shift(
                             days=-1).format('YYYY年MM月DD日')
                     elif re.match('今年(\d*)月?(\d*)[日,號]?', time):
