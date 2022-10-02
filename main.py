@@ -2,6 +2,8 @@ import pandas as pd
 from pprint import pprint
 import time
 import streamlit as st
+from datetime import datetime as dt
+from streamlit_timeline import timeline
 import json
 import trafilatura
 from trafilatura.settings import use_config
@@ -123,6 +125,63 @@ def choose_timeline_rp(df, kws):
     return timeline_rp
 
 
+def generate_timeline(time_df, anomalies):
+    anomaly_ft = time_df.timestamp.apply(lambda x: x in anomalies)
+    anomaly_df = time_df[anomaly_ft].copy()
+    anomaly_df.reset_index(inplace=True)
+    anomaly_df.drop("index", axis=1, inplace=True)
+
+    full_text = "".join(anomaly_df.Event.to_list())
+    freq_table = {kw: full_text.count(kw)
+                  for kw in st.session_state['keywords']}
+    sentence_score = {}
+    for sent in anomaly_df.Event:
+        score = 0
+        for k, v in freq_table.items():
+            if k in sent:
+                score += v
+        sentence_score[sent] = score / len(sent)
+
+    timeline = {timestamp: [] for timestamp in anomalies}
+    for idx, row in anomaly_df.iterrows():
+        event = row['Event']
+        if row['timestamp'] in anomalies:
+            timeline[row['timestamp']].append(event)
+
+    for k, v in timeline.items():
+        tmp = sorted(v, key=lambda x: sentence_score.get(
+            x) if sentence_score.get(x) else 0, reverse=True)
+        timeline[k] = tmp[0]
+
+    with open(f"./Experiments/{st.session_state['event']}/timeline.json", "w") as fh:
+        json.dump(timeline, fh)
+
+    data = {
+        "events": []
+    }
+    for k, v in timeline.items():
+        time_obj = dt.strptime(k, "%Y-%m-%dT%H:%M:%SZ")
+        date = {
+            "year": time_obj.year,
+            "month": time_obj.month,
+            "day": time_obj.day,
+        }
+        text = {
+            "text": v
+        }
+        data['events'].append({
+            "start_date": date,
+            "text": text
+        })
+    return data
+
+
+@st.cache
+def anomaly_detect(time_df):
+    return detect_anomaly_from_df(
+        time_df, 95)
+
+
 if __name__ == '__main__':
     st.title("時事圖文懶人包自動生成器")
     newconfig = use_config("myfile.cfg")
@@ -234,6 +293,7 @@ if __name__ == '__main__':
                 if submitted:
                     st.write("Extracting")
                     keywords = keyword_extract(kw_method, news_df)
+                    st.session_state['keywords'] = keywords
                     with open(f"./Experiments/{st.session_state['event']}/{kw_method}_keywords.txt", 'w') as fh:
                         fh.writelines((kw + "\n" for kw in keywords))
                     if len(keywords) != 1:
@@ -274,9 +334,10 @@ if __name__ == '__main__':
                     summary = f"f1 score: {f1_score}\n" + summary
                     with open(f"./Experiments/{st.session_state['event']}/{sm_method}_summary.txt", "w") as fh:
                         fh.write(summary)
-        else:
+        elif stage == "Timeline Generation":
+            st.header("事件時間軸")
             time_df = find_time(st.session_state['news_df'])
-            ft = time_df['Time'].apply(lambda x: len(x) > 10)
+            ft = time_df['Time'].apply(lambda x: len(x) > 5)
             time_df = time_df[ft]
             time_df['timestamp'] = time_df['Time'].apply(
                 lambda x: str_to_time(str(x)))
@@ -285,9 +346,9 @@ if __name__ == '__main__':
             grouping_method = st.selectbox(
                 "Choose a method", ["Anomaly Detector", "BerTopic"])
             if grouping_method == "Anomaly Detector":
-                fig, anomalies = detect_anomaly_from_df(
-                    time_df, 90)
-                anomaly_df = time_df[time_df['timestamp'] in anomalies].copy()
+                fig, anomalies = anomaly_detect(time_df)
+                timeline_data = generate_timeline(time_df, anomalies)
+                timeline(timeline_data, height=400)
 
             elif grouping_method == "BerTopic":
                 topics, topic_kws = topic_modeling(time_df['Event'].to_list())
