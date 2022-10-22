@@ -1,45 +1,4 @@
-def keyword_map_eval(ans: list, obj: list) -> float:
-    hit = 0
-    total_score = 0
-    for id, w in enumerate(obj):
-        if id + 1 > len(ans):
-            break
-        if w == ans[id]:
-            hit += 1
-            total_score += hit / (id + 1)
-    return total_score / len(ans)
-
-
-def keyword_precision_eval(ans: list, obj: list) -> float:
-    hit = 0
-    for kw in obj:
-        if kw in ans:
-            hit += 1
-    return hit, hit / len(obj)
-
-
-def summary_precision(output: str, human: str) -> float:
-    hit = 0
-    for w in output:
-        if w in human:
-            hit += 1
-
-    return hit / len(output)
-
-
-def summary_recall(output: str, human: str) -> float:
-    hit = 0
-    for w in human:
-        if w in output:
-            hit += 1
-    return hit / len(human)
-
-
-def summary_f1_eval(output: str, human: str) -> float:
-    precision = summary_precision(output, human)
-    recall = summary_recall(output, human)
-    f1 = 2 * (precision * recall) / (precision + recall)
-    return f1
+from metrics import summary_f1_eval
 
 
 def time_penalty(d1, d2):
@@ -84,7 +43,7 @@ def alignment_rouge(reference, system):
 
     # 2. calculate the recall
     n = len(y_test)
-    numerator = sum((len(pair[1]) for pair in y_test))
+    numerator = sum((len(g[1]) for g in y_test))
     denom = sum((time_penalty(y_test[i][0], system[i][0]) * (sum(
         (cnt(y_test[i][1], system[i][1], g) for g in y_test[i][1]))) for i in range(n)))
 

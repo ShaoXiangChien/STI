@@ -334,6 +334,7 @@ if __name__ == '__main__':
                     summary = f"f1 score: {f1_score}\n" + summary
                     with open(f"./Experiments/{st.session_state['event']}/{sm_method}_summary.txt", "w") as fh:
                         fh.write(summary)
+
         elif stage == "Timeline Generation":
             st.header("事件時間軸")
             time_df = find_time(st.session_state['news_df'])
@@ -350,9 +351,13 @@ if __name__ == '__main__':
                 timeline_data = generate_timeline(time_df, anomalies)
                 timeline(timeline_data, height=400)
 
-            elif grouping_method == "BerTopic":
-                topics, topic_kws = topic_modeling(time_df['Event'].to_list())
-                time_df['topic'] = topics
+            # elif grouping_method == "BerTopic":
+            #     topics, topic_kws = topic_modeling(time_df['Event'].to_list())
+            #     time_df['topic'] = topics
+
+            # Evaluation
+            reference = [("d1", "s1")]
+            performance = alignment_rouge(reference, time_df)
 
     elif mode == "Live Demo":
         pass
