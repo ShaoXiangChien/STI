@@ -1,7 +1,12 @@
 from find_time import *
+from berTopic_service import *
 import pandas as pd
+import re
+import arrow
 
-f=pd.read_csv("./Experiments/龍龍老K/news.csv")
-output = find_time(f,tokenized=True)
+df= pd.read_csv("C:/Users/Howard/Desktop/CS＿project/STI/Experiments/龍龍老K/news.csv")
 
-output.to_csv("./Experiments/龍龍老K/time_events.csv",encoding="utf-8-sig",index=False)
+event_pair=find_time(df)
+timeline=Bertopic_Clustering(event_pair)
+print(timeline)
+

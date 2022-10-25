@@ -54,7 +54,7 @@ def chineses_to_num(input: str):
 
 
 def cut_sentences(content):
-    end_flag = ['?', '!', '？', '！', '。', '…', '；']
+    end_flag = ['?', '!', '？', '！', '。', '…', '；','」']
 
     content = content.replace('\n', '')
     content_len = len(content)
@@ -160,32 +160,46 @@ def find_time(df: pd.DataFrame, tokenized=False):
                     t = t.replace('\)', ')')
                     time = chineses_to_num(t)
                     time = time.replace(' ','')
-                    if re.match('\d+月\d*[日,號]?', time):
+                    if re.match('(\d+)月(\d*)[日,號]?', time):
                         time = publish_time.format(
-                            'YYYY年') + re.match('\d+月\d*[日,號]?', time).group()
+                            'YYYY/') + re.match('(\d+)月(\d*)[日,號]?', time).group(1)+ (
+                                "" if not re.match('(\d+)月(\d*)[日,號]?', time).group(2) else "/" + re.match('(\d+)月(\d*)[日,號]?', time).group(2))
                     elif re.match('\d+[日,號]', time):
                         time = publish_time.format(
-                            'YYYY年MM月') + re.match('\d+[日,號]', time).group()
+                            'YYYY/MM/') + re.match('(\d+)[日,號]', time).group(1)
                     elif re.match('今[\(,（]\d+[日,號][\),）]', time) or re.match('[^至,迄]?今[^年,\(,（]?', time):
-                        time = publish_time.format('YYYY年MM月DD日')
+                        time = publish_time.format('YYYY/MM/DD')
                     elif re.match('昨[\(,（]\d+[日,號][\),）]', time) or re.match('昨[^\(（,]?', time):
                         time = publish_time.shift(
-                            days=-1).format('YYYY年MM月DD日')
+                            days=-1).format('YYYY/MM/DD')
                     elif re.match('今年(\d*)月?(\d*)[日,號]?', time):
-                        time = publish_time.format('YYYY年') + (
-                            '' if not re.match('今年(\d*)月?(\d*)[日,號]?', time).group(1) else re.match('今年(\d*)月?(\d*)[日,號]?', time).group(1)+'月') + (
-                            '' if not re.match('今年(\d*)月?(\d*)[日,號]?', time).group(2) else re.match('今年(\d*)月?(\d*)[日,號]?', time).group(2)+'日')
+                        time = publish_time.format('YYYY') + (
+                            '' if not re.match('今年(\d*)月?(\d*)[日,號]?', time).group(1) else "/" + re.match('今年(\d*)月?(\d*)[日,號]?', time).group(1)) + (
+                            '' if not re.match('今年(\d*)月?(\d*)[日,號]?', time).group(2) else "/" + re.match('今年(\d*)月?(\d*)[日,號]?', time).group(2))
                     elif re.match('去年(\d*)月?(\d*)[日,號]?', time):
-                        time = publish_time.shift(years=-1).format('YYYY年') + (
-                            '' if not re.match('去年(\d*)月?(\d*)[日,號]?', time).group(1) else re.match('去年(\d*)月?(\d*)[日,號]?', time).group(1)+'月') + (
-                            ''if not re.match('去年(\d*)月?(\d*)[日,號]?', time).group(2) else re.match('去年(\d*)月?(\d*)[日,號]?', time).group(2)+'日')
+                        time = publish_time.shift(years=-1).format('YYYY') + (
+                            '' if not re.match('去年(\d*)月?(\d*)[日,號]?', time).group(1) else "/" + re.match('去年(\d*)月?(\d*)[日,號]?', time).group(1)) + (
+                            ''if not re.match('去年(\d*)月?(\d*)[日,號]?', time).group(2) else "/" + re.match('去年(\d*)月?(\d*)[日,號]?', time).group(2))
                     elif re.match('民國(\d+)年(\d*)月?(\d*)[日,號]?', time):
-                        time = str(int(re.match('民國(\d+)年(\d*)月?(\d*)[日,號]?', time).group(1))+1911)+'年'+(
-                            '' if not re.match('民國(\d+)年(\d*)月?(\d*)[日,號]?', time).group(2) else re.match('民國(\d+)年(\d*)月?(\d*)[日,號]?', time).group(2)+'月') + (
-                            '' if not re.match('民國(\d+)年(\d*)月?(\d*)[日,號]?', time).group(3) else re.match('民國(\d+)年(\d*)月?(\d*)[日,號]?', time).group(3)+'日')
+                        time = str(int(re.match('民國(\d+)年(\d*)月?(\d*)[日,號]?', time).group(1))+1911)+(
+                            '' if not re.match('民國(\d+)年(\d*)月?(\d*)[日,號]?', time).group(2) else "/" + re.match('民國(\d+)年(\d*)月?(\d*)[日,號]?', time).group(2)) + (
+                            '' if not re.match('民國(\d+)年(\d*)月?(\d*)[日,號]?', time).group(3) else "/" + re.match('民國(\d+)年(\d*)月?(\d*)[日,號]?', time).group(3))
                     elif re.match('(\d{3})年(\d{0,2}月?\d{0,2}[日,號]?)', time):
-                        time = str(int(re.match('(\d{3})年(\d{0,2}月?\d{0,2}[日,號]?)', time).group(1))+1911)+'年'+re.match(
-                            '(\d{3})年(\d{0,2}月?\d{0,2}[日,號]?)', time).group(2)
+                        time = str(int(re.match('(\d{3})年(\d{0,2}月?\d{0,2}[日,號]?)', time).group(1))+1911)+(
+                            "" if not re.match('(\d{3})年(\d{0,2})月?(\d{0,2})[日,號]?', time).group(2) else "/" + re.match('(\d{3})年(\d{0,2})月?(\d{0,2})[日,號]?', time).group(2))+(
+                            "" if not re.match('(\d{3})年(\d{0,2})月?(\d{0,2})[日,號]?', time).group(3) else "/" + re.match('(\d{3})年(\d{0,2})月?(\d{0,2})[日,號]?', time).group(3))
+                    time = time.replace('年','/')
+                    time = time.replace('月','/')
+                    time = time.replace('日','/')
+                    if time[-1]=='/': time = time[:-1]
+                    if re.match("(\d{4}/)(\d{1})(?!.)",time):
+                        time=re.match("(\d{4}/)(\d{1})",time).group(1)+'0'+re.match("(\d{4}/)(\d{1})",time).group(2)
+
+                    try:
+                        fmt_time=arrow.get(time)
+                        time=fmt_time.format("YYYY/MM/DD")
+                    except:
+                        print("Get time fail, time: "+ time)
 
                 event = tmp_event+sentence
                 events_list = pd.concat(
