@@ -208,7 +208,6 @@ if __name__ == '__main__':
                 timeline_data = generate_timeline(time_df, anomalies)
                 timeline(timeline_data, height=400)
 
-<<<<<<< HEAD
             # elif grouping_method == "BerTopic":
             #     topics, topic_kws = topic_modeling(time_df['Event'].to_list())
             #     time_df['topic'] = topics
@@ -216,12 +215,6 @@ if __name__ == '__main__':
             # Evaluation
             reference = [("d1", "s1")]
             performance = alignment_rouge(reference, time_df)
-=======
-            elif grouping_method == "BerTopic":
-                fig, anomalies = anomaly_detect(time_df)
-                timeline_data = generate_timeline_beta(
-                    time_df, st.session_state['news_df'], anomalies)
->>>>>>> 4ae8c8179c8002f46d64fe178ddfc82072a5d02b
 
     elif mode == "Live Demo":
         pass
