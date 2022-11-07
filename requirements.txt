@@ -8,3 +8,6 @@ ckiptagger
 openai
 azure-ai-textanalytics
 azure-ai-anomalydetector
+stqdm
+requests-html
+google-search-results
