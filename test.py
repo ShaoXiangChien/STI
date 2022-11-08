@@ -1,49 +1,33 @@
-from datetime import date
-from pickle import TRUE
-from pprint import pprint
-import pandas as pd
-import re
-from clean_df import *
+from metrics import *
 
+base_path = "./Experiments/"
 
-def chineses_to_num(input: str):
-    translate_table = {
-        '零': 0,
-        '一': 1,
-        '二': 2,
-        '三': 3,
-        '四': 4,
-        '五': 5,
-        '六': 6,
-        '七': 7,
-        '八': 8,
-        '九': 9,
-        '十': 10
-    }
-    print
-    # 結果
-    result_str = ''
-    #暫存數字
-    tmp_num=0
-    idx = 0
-    while idx < len(input):
-        if translate_table.get(input[idx]) is not None:
-            current_word = translate_table.get(input[idx])
-            if current_word == 10:
-                if tmp_num == 0:
-                    tmp_num = 1
-                if translate_table.get(input[idx+1]) is None:
-                    tmp_num*=10
-            else:
-                tmp_num=tmp_num*10+current_word
+topics = [
+    '藻礁',
+    '林智堅論文抄襲',
+    '萊豬',
+    '柬埔寨詐騙',
+    '數位中介服務法'
+]
 
-        else:
-            if tmp_num != 0:
-                result_str += str(tmp_num)
-                tmp_num = 0
-            result_str += input[idx]
-        idx += 1
-    if tmp_num != 0:
-        result_str += str(tmp_num)
-    return result_str
-    
+files = [
+    '自訂summary.txt',
+    'kmeans_summary.txt',
+    'openai_summary.txt',
+    'azure_language_service_summary.txt',
+    'naive_summary.txt',
+]
+
+for topic in topics:
+    print(topic)
+    with open(f"{base_path}{topic}/{files[0]}", "r") as fh:
+        ans = fh.read().replace("\n", "").replace(" ", "")
+
+        for f in files[1:]:
+            with open(f"{base_path}{topic}/{f}", "r") as fh:
+                summary = fh.read().replace("\n", "").replace(" ", "")
+            f1_score = summary_f1_eval(summary, ans)
+            print(f"{f[:-4]}: {f1_score}\n")
+            summary = f"f1 score: {f1_score}\n" + summary
+            with open(f"{base_path}{topic}/{f}", "w") as fh:
+                fh.write(summary)

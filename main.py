@@ -1,10 +1,14 @@
 import pandas as pd
 import time
 import streamlit as st
+from datetime import datetime as dt
+from streamlit_timeline import timeline
 import json
 import trafilatura
 from trafilatura.settings import use_config
 from stqdm import stqdm
+import random
+
 
 # import self-defined modules
 from data_collection import *
@@ -13,13 +17,18 @@ from crawl_wiki import *
 from clean_df import *
 from metrics import *
 from anomaly_detection import *
+
 from keyword_extraction.tfidf_kw_extract import tfidf_kw_extract as kw_extract
 from crawl_wiki import crawl_wiki
 from summarization.naive_summarize import naive_summarize
 from summarization.azure_summarize import azure_summarize_wiki
+from main_functions import *
+from find_time import *
+
 KW_METHODS = ['tfidf', 'textrank',
               'azure language service', 'ckip', 'ckip_tfidf', 'openai']
-SM_METHODS = ['naive', 'kmeans', 'textrank', 'openai']
+SM_METHODS = ['naive', 'kmeans', 'textrank',
+              'openai', "azure_language_service"]
 start_tokenize = False
 start_kw_extract = False
 start_bg_search = False
@@ -47,59 +56,17 @@ def cut_sentences(content):
 
     return sentences
 
-
-def keyword_extract(method, df):
-    if method == "tfidf":
-        import keyword_extraction.tfidf_kw_extract as kw
-        keywords = kw.tfidf_kw_extract(df)
-    elif method == "textrank":
-        import keyword_extraction.textrank_kw_extract as kw
-        keywords = kw.textrank_kw_extract(df)
-    elif method == "azure language service":
-        import keyword_extraction.azure_kw_extract as kw
-        keywords = kw.azure_kw_extract(df)
-    elif method == "ckip":
-        import keyword_extraction.ckip_kw_extract as kw
-        keywords = kw.ckip_kw_extract(df)
-    elif method == "ckip_tfidf":
-        import keyword_extraction.ckip_tfidf_kw_extract as kw
-        keywords = kw.ckip_tfidf_kw_extract(df)
-    else:
-        import keyword_extraction.openai_kw_extract as kw
-        keywords = kw.openai_kw_extract(df)
-
-    return keywords
-
-
-def summarize(method, df):
-    st.write("Initializing")
-    summary = ""
-    if method == "naive":
-        import summarization.naive_summarize as sm
-        sentences = cut_sentences("".join(df['full_text'].to_list()))
-        tokenized_sentences = cut_sentences(
-            " ".join(df['full_text_tokens'].to_list()))
-        summary = sm.naive_summarize(sentences, tokenized_sentences)
-    elif method == "kmeans":
-        import summarization.kmeans_summarize as sm
-        sentences = cut_sentences("".join(df['full_text_tokens'].to_list()))
-        summary = sm.kmeans_summarize(sentences)
-    elif method == "textrank":
-        import summarization.textrank_summarize as sm
-        sentences = cut_sentences("".join(df['full_text_tokens'].to_list()))
-        summary = sm.textrank_summarize(sentences)
-    elif method == "openai":
-        import openai_services as sm
-        docs = "".join(df['full_text'].to_list())
-        summary = sm.summarize(docs)
-    return summary
-
 def wiki_summarize(doc):
     tokens = tokenize_single_doc(doc)
     sentences = cut_sentences(doc)
     tokenized_sentences = cut_sentences(tokens)
     summary = naive_summarize(sentences, tokenized_sentences)
     return summary
+
+@st.cache
+def anomaly_detect(time_df):
+    return detect_anomaly_from_df(
+        time_df, 95)
 
 
 
@@ -109,7 +76,7 @@ if __name__ == '__main__':
     mode = st.selectbox("Select a mode", ["Experiment", "Live Demo"])
     if mode == "Experiment":
         stage = st.sidebar.selectbox("Select the task you want to perform", [
-                                     "Data Collection", "Keyword Extraction", "Summarization", "Timeline Generation"])
+            "Data Collection", "Keyword Extraction", "Summarization", "Timeline Generation"])
         if stage == "Data Collection":
             event = st.text_input("請輸入您想搜尋的事件", "萊豬")
             st.session_state['event'] = event
@@ -214,6 +181,7 @@ if __name__ == '__main__':
                 if submitted:
                     st.write("Extracting")
                     keywords = keyword_extract(kw_method, news_df)
+                    st.session_state['keywords'] = keywords
                     with open(f"./Experiments/{st.session_state['event']}/{kw_method}_keywords.txt", 'w') as fh:
                         fh.writelines((kw + "\n" for kw in keywords))
                     if len(keywords) != 1:
@@ -246,17 +214,34 @@ if __name__ == '__main__':
 
                 if submit:
                     summary = summarize(
-                        sm_method, st.session_state['news_df'] if st.session_state['news_df'].shape[0] != 0 else "")
+                        sm_method, st.session_state['news_df'] if st.session_state['news_df'].shape[0] != 0 else "").replace("\n", "").replace(" ", "")
                     st.write(summary)
-                    f1_score = summary_f1_eval(summary, ans)
+                    f1_score = summary_f1_eval(
+                        summary, ans.replace("\n", "").replace(" ", ""))
                     st.write(f"f1 score: {f1_score}\n")
                     summary = f"f1 score: {f1_score}\n" + summary
-                    with open(f"./Experiments/{event}/{sm_method}_summary.txt", "w") as fh:
+                    with open(f"./Experiments/{st.session_state['event']}/{sm_method}_summary.txt", "w") as fh:
                         fh.write(summary)
-        else:
-            time_df, fig, anomalies = detect_anomaly_from_df(
-                st.session_state['news_df'], 90)
-            time_df.to_csv(f"./Experiments/{event}/time_df.csv", index=False)
+        elif stage == "Timeline Generation":
+            st.header("事件時間軸")
+            time_df = find_time(st.session_state['news_df'])
+            ft = time_df['Time'].apply(lambda x: len(x) > 5)
+            time_df = time_df[ft]
+            time_df['timestamp'] = time_df['Time'].apply(
+                lambda x: str_to_time(str(x)))
+            time_df.to_csv(
+                f"./Experiments/{event}/time_df.csv", index=False)
+            grouping_method = st.selectbox(
+                "Choose a method", ["Anomaly Detector", "BerTopic"])
+            if grouping_method == "Anomaly Detector":
+                fig, anomalies = anomaly_detect(time_df)
+                timeline_data = generate_timeline(time_df, anomalies)
+                timeline(timeline_data, height=400)
+
+            elif grouping_method == "BerTopic":
+                fig, anomalies = anomaly_detect(time_df)
+                timeline_data = generate_timeline_beta(
+                    time_df, st.session_state['news_df'], anomalies)
 
     elif mode == "Live Demo":
         event = st.text_input("請輸入您想搜尋的事件", "萊豬")

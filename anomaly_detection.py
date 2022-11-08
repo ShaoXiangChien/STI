@@ -66,11 +66,7 @@ def build_figure(df):
     return fig
 
 
-def detect_anomaly_from_df(df, sensitivity=95):
-    time_df = find_time(df)
-    ft = time_df['Time'].apply(lambda x: len(x) > 10)
-    time_df = time_df[ft]
-    time_df['timestamp'] = time_df['Time'].apply(lambda x: str_to_time(str(x)))
+def detect_anomaly_from_df(time_df, sensitivity=95):
     time_dt = time_df['timestamp'].value_counts().sort_index().to_dict()
     del time_dt['']
     sample_data = {
@@ -87,4 +83,4 @@ def detect_anomaly_from_df(df, sensitivity=95):
     df = pd.concat([pd.DataFrame(sample_data['series']), res],
                    axis=1, join="inner")
     fig = build_figure(df.iloc[30:])
-    return time_df, fig, df[df['isAnomaly']].timestamp.to_list()
+    return fig, df[df['isAnomaly']].timestamp.to_list()

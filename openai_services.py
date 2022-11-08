@@ -21,7 +21,7 @@ def summarize(doc):
     print('Sending a test completion job')
     start_phrase = doc + "\n摘要：\n"
     response = openai.Completion.create(
-        engine="text-davinci-002", prompt=start_phrase, max_tokens=50)
+        engine="text-davinci-002", prompt=start_phrase, max_tokens=500)
     text = response['choices'][0]['text'].replace(
         '\n', '').replace(' .', '.').strip()
     return text

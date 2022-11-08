@@ -81,7 +81,7 @@ def cut_sentences(content):
 # 3.若是句中重複出現'今'之類的關鍵字，會導致一段句子被重複讀取多次時間
 
 
-def find_time(df: pd.DataFrame):
+def find_time(df: pd.DataFrame, tokenized=False):
     timestamp = re.compile(
         '今\(\d+[日,號]\)|'
         '昨\(\d+[日,號]\)|'

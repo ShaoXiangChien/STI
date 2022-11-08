@@ -1,14 +1,18 @@
 import tensorflow_hub as hub
 import numpy as np
-import tensorflow_text
 from sklearn.metrics.pairwise import cosine_similarity
 import networkx as nx
 import ssl
 import streamlit as st
 
 ssl._create_default_https_context = ssl._create_unverified_context
+# try:
 embed = hub.load(
     "./universal-sentence-encoder-multilingual_3")
+# except:
+#     embed = hub.load(
+#         "https://tfhub.dev/google/universal-sentence-encoder-multilingual/3")
+#     embed.save("./universal-sentence-encoder-multilingual_3")
 
 
 # @st.experimental_memo(suppress_st_warning=True)
@@ -25,7 +29,7 @@ def textrank_summarize(sentences, word_limit=200):
     ranked_sentences = sorted(
         ((scores[i], s) for i, s in enumerate(sentences)), reverse=True)
 
-    result += [i[1] for i in ranked_sentences]
+    result = [i[1] for i in ranked_sentences]
     sentence_count = len(result)
     word_count = 0
     for idx, res in enumerate(result):

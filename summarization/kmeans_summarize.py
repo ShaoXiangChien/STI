@@ -46,7 +46,7 @@ def kmeans_summarize(sentences, number_of_clusters=0, word_limit=200):
     closest, _ = pairwise_distances_argmin_min(
         kmeans.cluster_centers_, sentence_embeddings)
     ordering = sorted(range(n_clusters), key=lambda k: avg[k])
-    result += [sentences[closest[idx]] for idx in ordering]
+    result = [sentences[closest[idx]] for idx in ordering]
     word_count = 0
     sentence_count = len(result)
     for idx, res in enumerate(result):
