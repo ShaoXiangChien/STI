@@ -70,7 +70,9 @@ def Tokenization(df):
 # test
 # outputdataframe=Tokenization(inputdataframe)
 # outputdataframe.to_csv("Covid_Tokenized.csv",encoding='utf_8_sig')
-
+def tokenize_single_doc(doc):
+    results = articut.parse(doc, level="lv2")
+    return results["result_segmentation"].replace("/", " ")
 
 def keyword_extract(text):
     result = articut.parse(text)

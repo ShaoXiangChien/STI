@@ -47,3 +47,33 @@ def azure_summarize(document):
             print("Summary extracted: \n{}".format(text))
             summary += text
     return summary
+
+def azure_summarize_wiki(documents):
+    global client
+
+    poller = client.begin_analyze_actions(
+        documents,
+        actions=[
+            ExtractSummaryAction(max_sentence_count=4)
+        ],
+    )
+    document_results = poller.result()
+    summaries = []
+    for result in document_results:
+        extract_summary_result = result[0]  # first document, first result
+        if extract_summary_result.is_error:
+            print("...Is an error with code '{}' and message '{}'".format(
+                extract_summary_result.code, extract_summary_result.message
+            ))
+        else:
+            cnt = 0
+            summary = ""
+            for sentence in extract_summary_result.sentences:
+                if cnt > 100:
+                    break
+                else:
+                    summary += sentence.text
+                    cnt += sentence.length
+            summaries.append(summary)
+
+    return summaries
