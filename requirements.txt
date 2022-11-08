@@ -12,3 +12,4 @@ stqdm
 requests-html
 google-search-results
 azure-ai-textanalytics==5.2.0b2
+streamlit-timeline

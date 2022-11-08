@@ -4,6 +4,7 @@ import streamlit as st
 import json
 import trafilatura
 from trafilatura.settings import use_config
+from streamlit_timeline import timeline
 from stqdm import stqdm
 from bertopic import BERTopic
 from hdbscan import HDBSCAN
@@ -19,6 +20,7 @@ from anomaly_detection import *
 from keyword_extraction.tfidf_kw_extract import tfidf_kw_extract as kw_extract
 from crawl_wiki import crawl_wiki
 from summarization.azure_summarize import azure_summarize_wiki
+from find_time import *
 
 def cut_sentences(content):
     end_flag = ['?', '!', '？', '！', '。', '…']
@@ -45,10 +47,20 @@ def cut_sentences(content):
 
 @st.cache
 def timeline_generate(df):
-    time_df, fig, anomalies = detect_anomaly_from_df(
-                df, 90)
-    time_df = time_df[time_df.Time.isin(anomalies)]
-    docs=time_df["Event"].tolist()
+    time_df = find_time(df)
+    ft = time_df['Time'].apply(lambda x: len(x) > 5)
+    time_df = time_df[ft]
+    time_df['timestamp'] = time_df['Time'].apply(
+        lambda x: str_to_time(str(x)))
+
+    fig, anomalies = detect_anomaly_from_df(
+                time_df, 90)
+    anomaly_ft = time_df.timestamp.apply(lambda x: x in anomalies)
+    anomaly_df = time_df[anomaly_ft].copy()
+    anomaly_df.reset_index(inplace=True)
+    anomaly_df.drop("index", axis=1, inplace=True)
+    docs = anomaly_df['Event'].to_list()
+
     umap_model = UMAP(n_neighbors=10, n_components=25, min_dist=0.1, metric='cosine')
     hdbscan_model = HDBSCAN(min_cluster_size=5, metric='euclidean', cluster_selection_method='eom', prediction_data=True)
     topic_model = BERTopic(language='multilingual',umap_model=umap_model,hdbscan_model=hdbscan_model)
@@ -57,16 +69,36 @@ def timeline_generate(df):
     for i,event in topic_model.get_representative_docs().items():
         representative_list.append(event[0])
 
-    final_topics=pd.DataFrame({
-        "Time":[],
-        "Event":[]
-    })
+    final_topics=pd.DataFrame()
     for event in representative_list:
+        time = time_df[time_df["Event"]==event]['timestamp'].iloc[0]
+        if time == "":
+            continue
         final_topics=final_topics.append({
-            "Time":time_df[time_df["Event"]==event].iat[0,0],
+            "Time": arrow.get(time[:10], "YYYY-MM-DD"),
             "Event":event
         },ignore_index=True)
-    return final_topics
+    st.write(final_topics)
+    st.write(final_topics.dtypes)
+
+    data = {
+        "events": []
+    }
+    for idx, row in final_topics.iterrows():
+        time_obj = row['Time']
+        date = {
+            "year": time_obj.year,
+            "month": time_obj.month,
+            "day": time_obj.day,
+        }
+        text = {
+            "text": row['Event']
+        }
+        data['events'].append({
+            "start_date": date,
+            "text": text
+        })
+    return final_topics, data
 
 
 if __name__ == '__main__':
@@ -179,8 +211,8 @@ if __name__ == '__main__':
                         {kw_wiki_summaries[kw]}
                         """)
             
-        timeline_df = timeline_generate(st.session_state['news_df'])
-        
+        timeline_df, visualize_data = timeline_generate(st.session_state['news_df'])
+        timeline(visualize_data, height=400)
         # time_df.to_csv(f"./Experiments/{event}/time_df.csv", index=False)
 
             

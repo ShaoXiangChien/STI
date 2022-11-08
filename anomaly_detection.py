@@ -68,7 +68,7 @@ def build_figure(df):
 
 def detect_anomaly_from_df(time_df, sensitivity=95):
     time_dt = time_df['timestamp'].value_counts().sort_index().to_dict()
-    del time_dt['']
+    del time_dt[""]
     sample_data = {
         "granularity": "daily",
         "series": [

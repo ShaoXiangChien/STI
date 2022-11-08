@@ -1,7 +1,7 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
 
-with open("./stopwords.txt") as fh:
+with open("./stopwords.txt", encoding="utf-8") as fh:
     stopwords = [line.strip() for line in fh.readlines()]
 
 
