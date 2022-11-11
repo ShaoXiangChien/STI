@@ -45,10 +45,10 @@ def summary_f1_eval(output: str, human: str) -> float:
 def time_penalty(d1, d2):
     """
     Calculate the time penalty of two dates
-    :param d1: the first date - <datetime>
-    :param d2: the second date - <datetime>
+    :param d1: the first date - <Arrow datetime>
+    :param d2: the second date - <Arrow datetime>
     """
-    return 1 / (abs(d1 - d2) + 1)
+    return 1 / (abs((d1 - d2).days) + 1)
 
 
 def cnt(r, s, g):
@@ -85,7 +85,8 @@ def alignment_rouge(reference, system):
     # 2. calculate the recall
     n = len(y_test)
     numerator = sum((len(pair[1]) for pair in y_test))
-    denom = sum((time_penalty(y_test[i][0], system[i][0]) * (sum(
-        (cnt(y_test[i][1], system[i][1], g) for g in y_test[i][1]))) for i in range(n)))
+    denom = sum((time_penalty(y_test[i][0], system[i][0]) * (sum((cnt(y_test[i][1], system[i][1], g)
+                                                                  for g in y_test[i][1])))
+                 for i in range(n)))
 
     return numerator / denom
