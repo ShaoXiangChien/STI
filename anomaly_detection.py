@@ -6,7 +6,7 @@ import numpy as np
 from dateutil import parser
 from datetime import datetime
 from azure.ai.anomalydetector import AnomalyDetectorClient
-from azure.ai.anomalydetector.models import DetectRequest, TimeSeriesPoint, TimeGranularity, \
+from azure.ai.anomalydetector.models import UnivariateDetectionOptions, TimeSeriesPoint, TimeGranularity, \
     AnomalyDetectorError
 from azure.core.credentials import AzureKeyCredential
 import plotly.express as px
@@ -18,8 +18,8 @@ subscription_key = 'a2653cad6bdd4efaabf530b50d8efeca'
 anomaly_detector_endpoint = 'https://mvaderic.cognitiveservices.azure.com/'
 
 # create an Anomaly Detector client
-ad_client = AnomalyDetectorClient(AzureKeyCredential(
-    subscription_key), anomaly_detector_endpoint)
+ad_client = AnomalyDetectorClient(anomaly_detector_endpoint, AzureKeyCredential(
+    subscription_key))
 
 
 def detect_anomaly_last(sample_data, sensitivity, skip_point=29):
@@ -39,9 +39,9 @@ def detect_anomaly_last(sample_data, sensitivity, skip_point=29):
     for i in range(skip_point, len(points) + 1):
         series = [TimeSeriesPoint(
             timestamp=item["timestamp"], value=item["value"]) for item in points[i - 29: i]]
-        request = DetectRequest(series=series, granularity=granularity,
-                                sensitivity=sensitivity, max_anomaly_ratio=0.25)
-        single_point = ad_client.detect_last_point(request)
+        request = UnivariateDetectionOptions(series=series, granularity=granularity,
+                                             sensitivity=sensitivity, max_anomaly_ratio=0.25)
+        single_point = ad_client.detect_univariate_last_point(request)
         if single_point.is_anomaly == True:
             anom_count += 1
         result['expectedValues'][i-1] = single_point.expected_value
